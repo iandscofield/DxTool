@@ -27,8 +27,8 @@ const main: NavItem[] = [
   { id: "security", label: "Security", icon: ShieldCheck },
 ];
 const tools: NavItem[] = [
-  { id: "history", label: "History", icon: History, soon: true },
-  { id: "reports", label: "Reports", icon: FileText, soon: true },
+  { id: "history", label: "History", icon: History },
+  { id: "reports", label: "Reports", icon: FileText },
   { id: "fixes", label: "Fixes", icon: Wrench, soon: true },
 ];
 

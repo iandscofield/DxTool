@@ -1,5 +1,6 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
-import type { AppInfo, CheckInfo, Inventory, ScanEvent, ScanKind, ScanReport } from "./types";
+import type { AppInfo, AppSettings, CheckInfo, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
+import { defaultBranding } from "./types";
 
 /** True inside the DxTool window; false when the UI is opened in a normal browser during development. */
 export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -25,6 +26,26 @@ export const api = {
     ch.onmessage = onEvent;
     return invoke<ScanReport>("run_scan", { kind, checks, onEvent: ch });
   },
+  currentMachine: () => (inTauri ? invoke<MachineInfo>("current_machine") : mock<ScanReport>("scan").then((r) => r.machine)),
+  listMachines: async (): Promise<MachineRecord[]> => {
+    if (inTauri) return invoke<MachineRecord[]>("list_machines");
+    const r = await mock<ScanReport>("scan");
+    const s = { id: r.id, kind: r.kind, startedAt: r.startedAt, elapsedMs: r.elapsedMs, score: r.score, grade: r.grade, counts: r.counts, isAdmin: r.isAdmin, checks: r.results.length };
+    const older = { ...s, id: "20261020-101500", startedAt: "2026-10-20T10:15:00-07:00", score: 82, grade: "Good", counts: { error: 0, warn: 3, info: 6 } };
+    return [{ info: r.machine, firstSeen: older.startedAt, lastSeen: r.startedAt, scans: [s, older] }];
+  },
+  loadScan: (machineId: string, scanId: string) => (inTauri ? invoke<ScanReport>("load_scan", { machineId, scanId }) : mock<ScanReport>("scan")),
+  deleteScan: (machineId: string, scanId: string) => (inTauri ? invoke<void>("delete_scan", { machineId, scanId }) : Promise.resolve()),
+  dataDir: () => (inTauri ? invoke<string>("data_dir") : Promise.resolve("(browser preview)")),
+  loadSettings: async (): Promise<AppSettings> => {
+    const raw: Partial<AppSettings> = inTauri ? await invoke<Partial<AppSettings>>("load_settings") : loadPref("settings", {});
+    return { ...raw, branding: { ...defaultBranding, ...(raw.branding ?? {}) } };
+  },
+  saveSettings: (settings: AppSettings) => (inTauri ? invoke<void>("save_settings", { settings }) : Promise.resolve(savePref("settings", settings))),
+  exportReport: (machineId: string, name: string, html: string, format: "html" | "pdf") =>
+    inTauri ? invoke<string>("export_report", { machineId, name, html, format }) : Promise.reject("Saving reports only works inside DxTool"),
+  openPath: (path: string) => (inTauri ? invoke<void>("open_path", { path }) : Promise.resolve()),
+  showInFolder: (path: string) => (inTauri ? invoke<void>("show_in_folder", { path }) : Promise.resolve()),
   relaunchAsAdmin: () => (inTauri ? invoke<void>("relaunch_as_admin") : Promise.reject("Only available inside DxTool")),
 };
 

@@ -4,6 +4,33 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.3.0 · Stage 4: history and reports · 2026-11-07
+
+### New
+- **Every scan is saved automatically**, per PC, in a `DxTool-Data` folder next to DxTool. Carry DxTool on a USB stick and the history of every PC goes with it.
+- **History page:**
+  - Every PC you've scanned, with its make, model and serial number.
+  - A chart of its health score over time.
+  - Every scan, which you can open again, make a report from, or delete.
+- **Compare two scans:** see the score change, what's new, what's been fixed and what's still there.
+- **DxTool reopens this PC's latest scan when it starts**, so results don't vanish when you close it.
+- **Reports page** with a live preview. Save as **PDF** or **HTML**, then open the file or show it in its folder.
+- **Reports are written for the PC owner first** (score, verdict, what needs attention and what to do). There's an optional technical section for a technician.
+- **Per-report options:** title, "prepared for", technician notes, and which sections to include.
+- **Report branding in Settings:** logo, company name, contact details and technician name. Each can be hidden in Settings or per report.
+- **Health page:** a "Make a report" button. A banner shows when you're looking at an older saved scan or one from another PC.
+- **Settings** now shows where the data folder is, with a button to open it.
+
+### Improved
+- Virtual display adapters (from VR or remote desktop software) are left out of the computer's graphics list in history and reports.
+
+### Known limitations
+- **Reports are always saved into the DxTool-Data folder.** Use "Show in folder" to copy or email them. There's no "Save as…" to choose another location yet.
+- **PDFs need Microsoft Edge**, which every Windows 10 and 11 PC has unless someone removed it. If it's missing, save as HTML and print from any browser.
+- **Saved scans include full details**, roughly 1 MB each, so a few hundred scans take a few hundred MB.
+
+---
+
 ## Version 0.2.0 · Stage 3: health checks and scans · 2026-11-07
 
 ### New

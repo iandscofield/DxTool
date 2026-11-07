@@ -1,6 +1,6 @@
 //! Data shapes sent to the user interface.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 /// Overall condition of an item.
@@ -212,7 +212,7 @@ pub struct CheckResult {
     pub elapsed_ms: u64,
 }
 
-#[derive(Serialize, Clone, Copy, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Counts {
     pub error: u32,
@@ -236,6 +236,56 @@ pub struct ScanReport {
     pub grade: String,
     pub counts: Counts,
     pub results: Vec<CheckResult>,
+    /// Which PC this scan was run on (scans from many PCs can live in one DxTool folder).
+    pub machine: MachineInfo,
+    pub app_version: String,
+    /// Whether the scan was written to the history folder.
+    pub saved: bool,
+}
+
+/// Identity and key specs of a PC, stored with every scan so history and reports stand alone.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct MachineInfo {
+    /// Stable folder-safe id: computer name plus part of the motherboard UUID.
+    pub id: String,
+    pub computer_name: String,
+    pub manufacturer: String,
+    pub model: String,
+    pub serial: String,
+    pub uuid: String,
+    pub windows: String,
+    pub cpu: String,
+    pub memory: String,
+    pub graphics: Vec<String>,
+    pub drives: Vec<String>,
+    pub motherboard: String,
+    pub bios: String,
+}
+
+/// One line in a machine's scan history.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ScanSummary {
+    pub id: String,
+    pub kind: String,
+    pub started_at: String,
+    pub elapsed_ms: u64,
+    pub score: u32,
+    pub grade: String,
+    pub counts: Counts,
+    pub is_admin: bool,
+    pub checks: usize,
+}
+
+/// A PC that has scans in the history folder.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct MachineRecord {
+    pub info: MachineInfo,
+    pub first_seen: String,
+    pub last_seen: String,
+    pub scans: Vec<ScanSummary>,
 }
 
 /// Live progress sent to the UI while a scan runs.

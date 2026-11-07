@@ -7,9 +7,12 @@ import { Placeholder } from "./pages/Placeholder";
 import { Scans } from "./pages/Scans";
 import { Health } from "./pages/Health";
 import { Security } from "./pages/Security";
+import { History } from "./pages/History";
+import { Reports } from "./pages/Reports";
 import { Settings } from "./pages/Settings";
 import { api, loadPref, savePref } from "./lib/api";
-import type { AppInfo, CheckInfo, Inventory, Mode, Page, ScanEvent, ScanKind, ScanReport, ScanState, ThemePref } from "./lib/types";
+import type { AppInfo, AppSettings, CheckInfo, Inventory, MachineRecord, Mode, Page, ScanEvent, ScanKind, ScanReport, ScanState, ThemePref } from "./lib/types";
+import { defaultBranding } from "./lib/types";
 
 function applyScanEvent(s: ScanState, e: ScanEvent): ScanState {
   if (e.type === "started") return { ...s, order: e.checks, progress: Object.fromEntries(e.checks.map((id) => [id, { state: "waiting" as const }])) };
@@ -30,6 +33,45 @@ export default function App() {
   const [scan, setScan] = useState<ScanState | null>(null);
   const [report, setReport] = useState<ScanReport | null>(null);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [machines, setMachines] = useState<MachineRecord[]>([]);
+  const [machineId, setMachineId] = useState<string | null>(null);
+  const [settings, setSettings] = useState<AppSettings>({ branding: defaultBranding });
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
+  const refreshHistory = useCallback(async () => {
+    try {
+      const list = await api.listMachines();
+      setMachines(list);
+      return list;
+    } catch {
+      return [];
+    }
+  }, []);
+
+  // On start: load settings, find this PC, and reopen its most recent saved scan.
+  useEffect(() => {
+    api.loadSettings().then((s) => {
+      setSettings(s);
+      setSettingsLoaded(true);
+    });
+    (async () => {
+      const [list, me] = await Promise.all([refreshHistory(), api.currentMachine().catch(() => null)]);
+      if (!me) return;
+      setMachineId(me.id);
+      const latest = list.find((m) => m.info.id === me.id)?.scans[0];
+      if (latest) {
+        const r = await api.loadScan(me.id, latest.id).catch(() => null);
+        if (r) setReport((cur) => cur ?? r);
+      }
+    })();
+  }, [refreshHistory]);
+
+  // Save settings shortly after they change.
+  useEffect(() => {
+    if (!settingsLoaded) return;
+    const t = setTimeout(() => api.saveSettings(settings).catch(() => {}), 400);
+    return () => clearTimeout(t);
+  }, [settings, settingsLoaded]);
 
   const runScan = useCallback(
     async (kind: ScanKind, checks: string[] = []) => {
@@ -40,13 +82,15 @@ export default function App() {
       try {
         const r = await api.runScan(kind, checks, (e) => setScan((s) => (s ? applyScanEvent(s, e) : s)));
         setReport(r);
+        setMachineId(r.machine.id);
+        refreshHistory();
       } catch (e) {
         setScanError(String(e));
       } finally {
         setScan(null);
       }
     },
-    [scan],
+    [scan, refreshHistory],
   );
 
   useEffect(() => savePref("mode", mode), [mode]);
@@ -92,11 +136,42 @@ export default function App() {
 
   let content: React.ReactNode;
   if (page === "settings") {
-    content = <Settings theme={theme} setTheme={setTheme} mode={mode} setMode={setMode} info={info} onElevate={elevate} />;
+    content = (
+      <Settings
+        theme={theme}
+        setTheme={setTheme}
+        mode={mode}
+        setMode={setMode}
+        info={info}
+        onElevate={elevate}
+        branding={settings.branding}
+        onBranding={(branding) => setSettings((s) => ({ ...s, branding }))}
+      />
+    );
+  } else if (page === "history") {
+    content = (
+      <History
+        machines={machines}
+        currentMachineId={machineId}
+        onRefresh={refreshHistory}
+        onOpen={(r) => {
+          setReport(r);
+          setPage("health");
+        }}
+        onReport={(r) => {
+          setReport(r);
+          setPage("reports");
+        }}
+      />
+    );
+  } else if (page === "reports") {
+    content = (
+      <Reports report={report} machines={machines} settings={settings} onPickScan={setReport} onRun={runScan} onOpenSettings={() => setPage("settings")} />
+    );
   } else if (page === "scans") {
     content = <Scans catalog={catalog} scan={scan} report={report} info={info} onRun={runScan} onViewResults={() => setPage("health")} />;
   } else if (page === "health") {
-    content = <Health report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} />;
+    content = <Health report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} currentMachineId={machineId} onReport={() => setPage("reports")} />;
   } else if (page === "security") {
     content = <Security report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} />;
   } else if (page !== "overview" && page !== "hardware") {

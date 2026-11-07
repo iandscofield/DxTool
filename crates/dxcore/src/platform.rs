@@ -25,6 +25,23 @@ pub fn relaunch_as_admin() -> Result<(), String> {
     }
 }
 
+/// Opens a file or folder with its default program.
+pub fn open_path(path: &str) -> Result<(), String> {
+    let file = HSTRING::from(path);
+    let verb = HSTRING::from("open");
+    let r = unsafe { ShellExecuteW(None, &verb, &file, PCWSTR::null(), PCWSTR::null(), SW_SHOWNORMAL) };
+    if r.0 as isize > 32 { Ok(()) } else { Err(format!("Could not open {path}")) }
+}
+
+/// Opens File Explorer with the file selected.
+pub fn show_in_folder(path: &str) -> Result<(), String> {
+    std::process::Command::new("explorer.exe")
+        .arg(format!("/select,{path}"))
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| e.to_string())
+}
+
 pub fn firmware_type() -> &'static str {
     let mut t = FIRMWARE_TYPE::default();
     if unsafe { GetFirmwareType(&mut t) }.is_err() {

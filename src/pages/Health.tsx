@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { HeartPulse, Play, RefreshCw, ShieldAlert } from "lucide-react";
+import { FileText, HeartPulse, History as HistoryIcon, Play, RefreshCw, ShieldAlert } from "lucide-react";
 import type { CheckInfo, Mode, ScanKind, ScanReport, ScanState } from "../lib/types";
 import { ScoreRing } from "../components/ScoreRing";
 import { ScanProgress } from "../components/ScanProgress";
@@ -41,12 +41,16 @@ export function Health({
   catalog,
   mode,
   onRun,
+  currentMachineId,
+  onReport,
 }: {
   report: ScanReport | null;
   scan: ScanState | null;
   catalog: CheckInfo[];
   mode: Mode;
   onRun: (kind: ScanKind, checks?: string[]) => void;
+  currentMachineId: string | null;
+  onReport: () => void;
 }) {
   const findings = useMemo(() => (report ? collectFindings(report.results) : []), [report]);
   const groups = useMemo(() => {
@@ -70,10 +74,22 @@ export function Health({
     );
   }
   const limited = report.results.filter((r) => r.limited);
+  const otherPc = !!currentMachineId && !!report.machine?.id && report.machine.id !== currentMachineId;
+  const ageHours = (Date.now() - new Date(report.startedAt).getTime()) / 3_600_000;
   const when = new Date(report.startedAt);
 
   return (
     <div className="page health">
+      {(otherPc || ageHours > 1) && (
+        <div className="banner info-banner">
+          <HistoryIcon size={16} />
+          <span>
+            {otherPc
+              ? `You're viewing a saved scan of another PC: ${report.machine.computerName}. "Scan again" scans this PC instead.`
+              : `This is a saved scan from ${when.toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}. Scan again for up-to-date results.`}
+          </span>
+        </div>
+      )}
       <section className="health-hero card">
         <ScoreRing score={report.score} grade={report.grade} />
         <div className="health-hero-text">
@@ -86,12 +102,16 @@ export function Health({
             {report.counts.error + report.counts.warn === 0 && <span className="chip c-ok">No problems found</span>}
           </div>
           <div className="muted small">
+            {report.machine?.computerName && `${report.machine.computerName} · `}
             {kindName[report.kind]} · {report.results.length} checks · {(report.elapsedMs / 1000).toFixed(1)} s · {when.toLocaleDateString()} {when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </div>
         </div>
         <div className="health-hero-actions">
           <button className="btn" onClick={() => onRun(report.kind === "custom" ? "full" : report.kind)}>
             <RefreshCw size={15} /> Scan again
+          </button>
+          <button className="btn ghost" onClick={onReport}>
+            <FileText size={15} /> Make a report
           </button>
           {report.kind === "fast" && (
             <button className="btn ghost" onClick={() => onRun("full")}>

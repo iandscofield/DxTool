@@ -6,7 +6,7 @@ fn main() {
         println!("{}", serde_json::to_string_pretty(&dxcore::health::catalog()).unwrap());
         return;
     }
-    let args: Vec<String> = std::env::args().skip(1).filter(|a| a != "--json").collect();
+    let args: Vec<String> = std::env::args().skip(1).filter(|a| a != "--json" && a != "--save").collect();
     let json = std::env::args().any(|a| a == "--json");
     let kind = match args.first().map(String::as_str) {
         None | Some("fast") => "fast",
@@ -21,6 +21,13 @@ fn main() {
             }
         }
     });
+    let mut report = report;
+    if std::env::args().any(|a| a == "--save") {
+        match dxcore::history::save(&report) {
+            Ok(p) => { report.saved = true; eprintln!("saved to {}", p.display()); }
+            Err(e) => eprintln!("save failed: {e}"),
+        }
+    }
     if json {
         println!("{}", serde_json::to_string_pretty(&report).unwrap());
         return;

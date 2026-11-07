@@ -14,7 +14,13 @@ pub mod events;
 #[cfg(windows)]
 pub mod health;
 #[cfg(windows)]
+pub mod history;
+#[cfg(windows)]
 pub mod inventory;
+#[cfg(windows)]
+pub mod machine;
+#[cfg(windows)]
+pub mod report;
 #[cfg(windows)]
 pub mod platform;
 #[cfg(windows)]

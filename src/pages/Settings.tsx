@@ -1,5 +1,6 @@
 import { Monitor, Moon, Sun } from "lucide-react";
-import type { AppInfo, Mode, ThemePref } from "../lib/types";
+import type { AppInfo, Branding, Mode, ThemePref } from "../lib/types";
+import { BrandingSettings } from "../components/BrandingSettings";
 
 export function Settings({
   theme,
@@ -8,6 +9,8 @@ export function Settings({
   setMode,
   info,
   onElevate,
+  branding,
+  onBranding,
 }: {
   theme: ThemePref;
   setTheme: (t: ThemePref) => void;
@@ -15,6 +18,8 @@ export function Settings({
   setMode: (m: Mode) => void;
   info: AppInfo | null;
   onElevate: () => void;
+  branding: Branding;
+  onBranding: (b: Branding) => void;
 }) {
   return (
     <div className="page settings">
@@ -57,10 +62,7 @@ export function Settings({
         </div>
       </section>
 
-      <section className="card">
-        <h2>Report branding</h2>
-        <p className="muted small">Logo, company name and technician name for reports arrive with the Reports section (Stage 4).</p>
-      </section>
+      <BrandingSettings branding={branding} onChange={onBranding} />
 
       <section className="card">
         <h2>About</h2>

@@ -121,7 +121,73 @@ export interface ScanReport {
   grade: string;
   counts: Counts;
   results: CheckResult[];
+  machine: MachineInfo;
+  appVersion: string;
+  saved: boolean;
 }
+
+export interface MachineInfo {
+  id: string;
+  computerName: string;
+  manufacturer: string;
+  model: string;
+  serial: string;
+  uuid: string;
+  windows: string;
+  cpu: string;
+  memory: string;
+  graphics: string[];
+  drives: string[];
+  motherboard: string;
+  bios: string;
+}
+
+export interface ScanSummary {
+  id: string;
+  kind: ScanKind;
+  startedAt: string;
+  elapsedMs: number;
+  score: number;
+  grade: string;
+  counts: Counts;
+  isAdmin: boolean;
+  checks: number;
+}
+
+export interface MachineRecord {
+  info: MachineInfo;
+  firstSeen: string;
+  lastSeen: string;
+  scans: ScanSummary[];
+}
+
+export interface Branding {
+  /** Logo image as a data: URL. */
+  logo: string | null;
+  showLogo: boolean;
+  company: string;
+  showCompany: boolean;
+  /** Phone, email or website shown under the company name. */
+  contact: string;
+  showContact: boolean;
+  tech: string;
+  showTech: boolean;
+}
+
+export interface AppSettings {
+  branding: Branding;
+}
+
+export const defaultBranding: Branding = {
+  logo: null,
+  showLogo: true,
+  company: "",
+  showCompany: true,
+  contact: "",
+  showContact: true,
+  tech: "",
+  showTech: true,
+};
 
 export type ScanEvent =
   | { type: "started"; checks: string[] }

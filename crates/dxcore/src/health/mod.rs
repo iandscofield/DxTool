@@ -107,7 +107,9 @@ pub fn run_scan(kind: &str, selected: &[String], on_event: &(dyn Fn(ScanEvent) +
     let ids = checks_for(kind, selected);
     on_event(ScanEvent::Started { checks: ids.iter().map(|s| s.to_string()).collect() });
 
+    let mut machine = crate::model::MachineInfo::default();
     let mut results: Vec<CheckResult> = std::thread::scope(|s| {
+        let m = s.spawn(crate::machine::collect);
         let handles: Vec<_> = ids
             .iter()
             .filter_map(|id| CHECKS.iter().find(|(i, _)| i.id == *id))
@@ -126,7 +128,9 @@ pub fn run_scan(kind: &str, selected: &[String], on_event: &(dyn Fn(ScanEvent) +
                 })
             })
             .collect();
-        handles.into_iter().filter_map(|h| h.join().ok()).collect()
+        let out = handles.into_iter().filter_map(|h| h.join().ok()).collect();
+        machine = m.join().unwrap_or_default();
+        out
     });
     let order = |id: &str| CHECKS.iter().position(|(i, _)| i.id == id).unwrap_or(usize::MAX);
     results.sort_by_key(|r| order(&r.id));
@@ -143,6 +147,9 @@ pub fn run_scan(kind: &str, selected: &[String], on_event: &(dyn Fn(ScanEvent) +
         grade: grade(score).to_string(),
         counts,
         results,
+        machine,
+        app_version: env!("CARGO_PKG_VERSION").to_string(),
+        saved: false,
     }
 }
 
@@ -251,7 +258,7 @@ pub(crate) fn event_item(ev: &Event, idx: usize, kind: &str, extra: Vec<Field>) 
 }
 
 /// Runs a console program without showing a window and returns (exit code, output).
-pub(crate) fn run_hidden(exe: &str, args: &[&str], timeout: Duration) -> Result<(i32, String), String> {
+pub fn run_hidden(exe: &str, args: &[&str], timeout: Duration) -> Result<(i32, String), String> {
     use std::os::windows::process::CommandExt;
     const CREATE_NO_WINDOW: u32 = 0x0800_0000;
     let mut child = Command::new(exe)

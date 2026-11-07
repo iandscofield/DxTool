@@ -80,6 +80,25 @@ The results of the latest scan.
 | Security | Device security | Secure Boot, TPM, BitLocker, User Account Control, memory integrity, Remote Desktop, old SMB1 file sharing |
 | Network | Network and internet | Internet access as Windows sees it, addresses, router address problems, slow wired links, weak Wi-Fi, proxy settings, custom hosts file entries. DxTool doesn't contact the internet for this |
 
+## History ✅
+Every scan is saved automatically, grouped by PC.
+- **Every PC you've scanned** in one list, with its make, model, serial number and latest score. "This PC" is marked.
+- **Health score over time** as a small chart.
+- **All scans** for a PC: date, type, score, problems, warnings, notes and whether it ran as administrator. **Open** any scan to see its full results, make a **Report** from it, or **Delete** it (asks first).
+- **Compare two scans**: tick two and click Compare to see the score change, what's **new**, what's been **fixed**, what's **still there**, and which checks changed.
+- DxTool reopens the latest scan of this PC when it starts.
+- **Portable:** everything lives in a `DxTool-Data` folder next to DxTool. Run DxTool from a USB stick and the history of every PC you scan goes with it. (If that folder can't be written to, DxTool uses `%LOCALAPPDATA%\DxTool` instead.)
+
+## Reports ✅
+Turn any scan into a report you can give to the PC's owner.
+- **Live preview** that updates as you change options.
+- **Save as PDF or HTML.** Reports are saved in `DxTool-Data\reports\<PC>`, with **Open** and **Show in folder** buttons. PDFs are made by Microsoft Edge, which is built into Windows, so nothing extra is needed.
+- **Written for the owner first:** the score and a one-line verdict, then "What needs attention" with what to do about each item.
+- **Detailed enough for a technician:** optional technical section with evidence, measured facts and detail tables for every check.
+- **Options per report:** title, who it's prepared for, your own technician notes, and whether to include computer details, notes, the list of checks and the technical section.
+- **Branding:** your logo, company name, contact details and technician name at the top. Set them once in **Settings**; each can be hidden in Settings or per report.
+- The footer records the DxTool version, scan type, whether it ran as administrator, and which checks were partial.
+
 ## Security page ✅
 The antivirus, firewall and device security results from the latest scan, all in one place. Virus scanning is coming in Stage 6.
 
@@ -104,19 +123,13 @@ Click any item to open a side panel with everything about it: summary, connectio
 
 ## Other ✅
 - Dark and light themes, or follow Windows.
+- **Settings are saved in the DxTool-Data folder**, so they travel with DxTool on a USB stick.
 - Banner when DxTool isn't running as administrator, with a one-click **Restart as administrator** button.
 - Works fully offline.
 
 ---
 
 ## Coming in version 1 🔜
-
-### History (Stage 4)
-- Every scan saved per machine; compare two scans to see what changed. (Right now only the latest scan is kept, and only until DxTool closes.)
-
-### Reports (Stage 4)
-- HTML and PDF reports, readable by the PC owner and detailed enough for a technician.
-- Your logo, company name and technician name, set once in Settings; each can be hidden.
 
 ### Fixes (Stage 5)
 - Separate section, unlocked after a scan and a risk acknowledgement.

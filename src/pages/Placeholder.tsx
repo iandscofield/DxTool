@@ -2,16 +2,6 @@ import { Construction } from "lucide-react";
 import type { Page } from "../lib/types";
 
 const plans: Partial<Record<Page, { title: string; stage: string; items: string[] }>> = {
-  history: {
-    title: "History",
-    stage: "Stage 4",
-    items: ["Every scan saved per machine", "Compare any two scans to see what changed", "Works across all your PCs when DxTool runs from a USB stick"],
-  },
-  reports: {
-    title: "Reports",
-    stage: "Stage 4",
-    items: ["HTML and PDF reports", "Your logo, company name and technician name (each can be hidden)", "Readable by the PC owner and detailed enough for a technician"],
-  },
   fixes: {
     title: "Fixes",
     stage: "Stage 5",
