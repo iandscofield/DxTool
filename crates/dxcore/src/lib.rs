@@ -10,6 +10,10 @@ pub mod model;
 #[cfg(windows)]
 pub mod devices;
 #[cfg(windows)]
+pub mod events;
+#[cfg(windows)]
+pub mod health;
+#[cfg(windows)]
 pub mod inventory;
 #[cfg(windows)]
 pub mod platform;

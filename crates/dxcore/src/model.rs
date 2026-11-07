@@ -134,3 +134,115 @@ impl Section {
         Self { title: title.into(), raw: false, fields }
     }
 }
+
+// ───────────────────────────── Health scans ─────────────────────────────
+
+/// Static description of one health check, shown in the Custom scan picker.
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckInfo {
+    pub id: &'static str,
+    pub title: &'static str,
+    pub group: &'static str,
+    pub description: &'static str,
+    /// Included in a Fast scan.
+    pub fast: bool,
+    /// Only run when picked in a Custom scan (very slow checks).
+    pub custom_only: bool,
+    /// Gives full results only with administrator rights.
+    pub needs_admin: bool,
+    /// Rough duration hint for the user, e.g. "a few seconds".
+    pub duration: &'static str,
+}
+
+/// Something a check noticed, explained in plain English.
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Finding {
+    pub id: String,
+    pub severity: Status,
+    pub title: String,
+    /// What this means, for a non-expert.
+    pub detail: String,
+    /// What to do about it.
+    pub advice: Option<String>,
+    /// Id of a repair in the Fixes section that addresses this (Stage 5).
+    pub fix: Option<String>,
+    /// Supporting facts for a technician.
+    pub evidence: Vec<Field>,
+}
+
+impl Finding {
+    pub fn new(id: impl Into<String>, severity: Status, title: impl Into<String>, detail: impl Into<String>) -> Self {
+        Self { id: id.into(), severity, title: title.into(), detail: detail.into(), advice: None, fix: None, evidence: vec![] }
+    }
+    pub fn advice(mut self, a: impl Into<String>) -> Self {
+        self.advice = Some(a.into());
+        self
+    }
+    pub fn fix(mut self, f: &str) -> Self {
+        self.fix = Some(f.into());
+        self
+    }
+    pub fn evidence(mut self, e: Vec<Field>) -> Self {
+        self.evidence = e;
+        self
+    }
+}
+
+#[derive(Serialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct CheckResult {
+    pub id: String,
+    pub title: String,
+    pub group: String,
+    pub status: Status,
+    /// One-line outcome, e.g. "3 drives, all healthy".
+    pub summary: String,
+    pub findings: Vec<Finding>,
+    /// Key facts measured by the check.
+    pub facts: Vec<Field>,
+    /// Detailed rows (drives, crashes, events...) shown as a table.
+    pub items: Vec<Item>,
+    /// What the rows are, e.g. "Crash events".
+    pub items_label: Option<String>,
+    /// Set when the check could not run fully (for example it needs administrator rights).
+    pub limited: Option<String>,
+    pub error: Option<String>,
+    pub elapsed_ms: u64,
+}
+
+#[derive(Serialize, Clone, Copy, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Counts {
+    pub error: u32,
+    pub warn: u32,
+    pub info: u32,
+}
+
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ScanReport {
+    pub id: String,
+    /// "fast", "full" or "custom".
+    pub kind: String,
+    pub started_at: String,
+    pub elapsed_ms: u64,
+    pub computer_name: String,
+    pub is_admin: bool,
+    /// 0 to 100.
+    pub score: u32,
+    /// "Excellent", "Good", "Fair" or "Poor".
+    pub grade: String,
+    pub counts: Counts,
+    pub results: Vec<CheckResult>,
+}
+
+/// Live progress sent to the UI while a scan runs.
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase", tag = "type")]
+pub enum ScanEvent {
+    Started { checks: Vec<String> },
+    CheckStarted { id: String },
+    CheckFinished { id: String, status: Status, summary: String, elapsed_ms: u64 },
+}

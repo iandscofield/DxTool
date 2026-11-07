@@ -31,6 +31,7 @@ Quick engine test without the interface:
 
 ```bash
 cargo run -p dxcore --example inventory
+cargo run -p dxcore --example scan          # Fast scan (or: full, or a list of check ids)
 ```
 
 ## Licence

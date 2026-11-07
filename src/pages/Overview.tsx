@@ -1,6 +1,8 @@
 import { useMemo } from "react";
-import { AlertTriangle, ChevronRight, Clock, RefreshCw, ShieldCheck, Sparkles } from "lucide-react";
-import type { Category, Inventory, Item } from "../lib/types";
+import { AlertTriangle, ChevronRight, Clock, Loader2, Play, RefreshCw, ShieldCheck } from "lucide-react";
+import type { Category, Inventory, Item, ScanKind, ScanReport, ScanState, Status } from "../lib/types";
+import { ScoreRing } from "../components/ScoreRing";
+import { collectFindings } from "../components/FindingList";
 import { CategoryIcon } from "../lib/icons";
 import { StatusBadge } from "../components/Status";
 
@@ -36,11 +38,19 @@ export function Overview({
   onOpenCategory,
   onRefresh,
   refreshing,
+  report,
+  scan,
+  onRunScan,
+  onOpenHealth,
 }: {
   inventory: Inventory;
   onOpenCategory: (id: string) => void;
   onRefresh: () => void;
   refreshing: boolean;
+  report: ScanReport | null;
+  scan: ScanState | null;
+  onRunScan: (kind: ScanKind) => void;
+  onOpenHealth: () => void;
 }) {
   const inv = inventory;
   const computer = item(inv, "system", "computer");
@@ -118,6 +128,11 @@ export function Overview({
     return t;
   }, [inv, computer, board, firmware]);
 
+  const findings = useMemo(
+    () => (report ? collectFindings(report.results).filter((f) => f.finding.severity === "error" || f.finding.severity === "warn") : []),
+    [report],
+  );
+
   const attention = useMemo(() => {
     const seen = new Set<string>();
     const out: { item: Item; cat: Category }[] = [];
@@ -161,13 +176,41 @@ export function Overview({
           </div>
         </div>
         <div className="hero-side">
-          <div className="scan-card">
-            <Sparkles size={18} />
-            <div>
-              <div className="scan-title">Health scans are next</div>
-              <div className="muted small">Fast, Full and Custom scans arrive in the next build stage.</div>
+          {scan ? (
+            <button className="scan-card" onClick={onOpenHealth}>
+              <Loader2 size={18} className="spin" />
+              <div>
+                <div className="scan-title">Scan running…</div>
+                <div className="muted small">
+                  {scan.order.filter((id) => scan.progress[id]?.state === "done").length} of {scan.order.length || "…"} checks done
+                </div>
+              </div>
+            </button>
+          ) : report ? (
+            <button className="scan-card has-score" onClick={onOpenHealth}>
+              <ScoreRing score={report.score} size={52} stroke={5} />
+              <div>
+                <div className="scan-title">Health: {report.grade}</div>
+                <div className="muted small">
+                  {report.counts.error + report.counts.warn === 0
+                    ? "No problems found"
+                    : [report.counts.error && `${report.counts.error} problem${report.counts.error > 1 ? "s" : ""}`, report.counts.warn && `${report.counts.warn} warning${report.counts.warn > 1 ? "s" : ""}`].filter(Boolean).join(" · ")}
+                </div>
+              </div>
+              <ChevronRight size={16} className="muted" />
+            </button>
+          ) : (
+            <div className="scan-card">
+              <Play size={18} />
+              <div>
+                <div className="scan-title">Check this PC's health</div>
+                <div className="muted small">A Fast scan takes a few seconds and changes nothing.</div>
+                <button className="btn small scan-cta" onClick={() => onRunScan("fast")}>
+                  <Play size={13} /> Run Fast scan
+                </button>
+              </div>
             </div>
-          </div>
+          )}
           <button className="btn" onClick={onRefresh} disabled={refreshing}>
             <RefreshCw size={15} className={refreshing ? "spin" : ""} /> {refreshing ? "Refreshing…" : "Refresh hardware"}
           </button>
@@ -200,14 +243,33 @@ export function Overview({
             <AlertTriangle size={17} /> Needs attention
           </h2>
           <span className="muted small">
-            {attention.length === 0 ? "Nothing flagged in the hardware inventory" : `${attention.length} item${attention.length > 1 ? "s" : ""}`}
+            {attention.length + findings.length === 0
+              ? report
+                ? "Nothing flagged by the hardware inventory or the health scan"
+                : "Nothing flagged in the hardware inventory"
+              : `${attention.length + findings.length} item${attention.length + findings.length > 1 ? "s" : ""}`}
             {disabled > 0 && ` · ${disabled} disabled device${disabled > 1 ? "s" : ""} (not a problem)`}
           </span>
         </div>
-        {attention.length === 0 ? (
-          <div className="all-good">Everything the inventory can check looks fine. Deeper checks (drive wear, crashes, event logs) come with health scans.</div>
+        {attention.length + findings.length === 0 ? (
+          <div className="all-good">
+            {report
+              ? "Everything checked looks fine."
+              : "Everything the inventory can check looks fine. Run a health scan for deeper checks: drive wear, crashes, event logs, updates and security."}
+          </div>
         ) : (
           <div className="attention-list">
+            {findings.map(({ finding: f, check }) => (
+              <button key={`${check.id}-${f.id}`} className="attention-row" onClick={onOpenHealth}>
+                <StatusBadge status={f.severity as Status} text={f.severity === "error" ? "Problem" : "Warning"} />
+                <div className="attention-text">
+                  <div className="attention-name">{f.title}</div>
+                  <div className="muted small">{f.advice ?? f.detail}</div>
+                </div>
+                <span className="muted small">{check.title}</span>
+                <ChevronRight size={16} className="muted" />
+              </button>
+            ))}
             {attention.map(({ item: i, cat: c }) => (
               <button key={`${c.id}-${i.id}`} className="attention-row" onClick={() => onOpenCategory(c.id)}>
                 <StatusBadge status={i.status} text={i.status === "error" ? "Problem" : "Warning"} />

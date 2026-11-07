@@ -4,7 +4,7 @@ import type { Item, Mode, Section } from "../lib/types";
 import { copyText } from "../lib/api";
 import { StatusBadge } from "./Status";
 
-export function DetailPanel({ item, mode, onClose }: { item: Item; mode: Mode; onClose: () => void }) {
+export function DetailPanel({ item, mode, onClose, floating }: { item: Item; mode: Mode; onClose: () => void; floating?: boolean }) {
   const [q, setQ] = useState("");
   const [copied, setCopied] = useState(false);
   const advanced = mode === "advanced";
@@ -24,7 +24,7 @@ export function DetailPanel({ item, mode, onClose }: { item: Item; mode: Mode; o
   };
 
   return (
-    <aside className="detail">
+    <aside className={`detail ${floating ? "floating" : ""}`}>
       <header className="detail-head">
         <div className="detail-title">
           <h2 title={item.name}>{item.name}</h2>

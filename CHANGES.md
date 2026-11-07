@@ -4,6 +4,45 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.2.0 · Stage 3: health checks and scans · 2026-11-07
+
+### New
+- **Scans page** with three kinds of scan:
+  - **Fast**: 14 checks, last 30 days, a few seconds.
+  - **Full**: 19 checks, last 90 days.
+  - **Custom**: pick your own checks, including a slow deep system file check.
+  - Scans only look; they change nothing.
+- **Live progress** while a scan runs. You can move around the app while it works.
+- **Health page** with a 0–100 health score and a grade. Findings come most serious first, each with what it means, what to do, and the facts behind it.
+- **19 health checks** covering:
+  - **Storage:** drive health and wear, free space, drive and file system errors.
+  - **Stability:** blue screens, unexpected shutdowns, hardware errors, device problems, drivers, service failures and app crashes.
+  - **Windows:** Windows Update, the system image, startup programs and boot time, memory and performance, battery and activation.
+  - **Security:** antivirus, firewall and device security.
+  - **Network:** connection and internet.
+- **Blue screens explained:** about 50 common stop codes translated into plain English with advice. Crash dump files are read when DxTool runs as administrator.
+- **Security page** showing antivirus, firewall and device security results.
+- **Overview** now has a health card (run a Fast scan, or see the latest score). The "Needs attention" list includes scan findings.
+- The sidebar shows the latest health score, and "running" while a scan is in progress.
+
+### Improved
+- **The hardware inventory is about 5 seconds faster without administrator rights.** Windows makes the TPM query wait 5 seconds before refusing it, so DxTool now skips it unless it has admin rights.
+
+### How the score works
+- Each problem (red) takes off 18 points.
+- Each warning (amber) takes off 6 points.
+- Notes (blue) are for information and don't count.
+- No single check can take off more than 30 points, so one noisy area can't sink the whole score.
+
+### Known limitations
+- **Only the latest scan is kept, until DxTool closes.** Saved history per machine comes in Stage 4.
+- **Some checks give partial results without administrator rights:** drive wear and temperature, crash dump files, the system image check, TPM and BitLocker.
+- **Tested only without administrator rights.** I couldn't test the administrator-only parts: it isn't possible yet in the development version, and Windows asks you, not me, to approve it.
+- **The one-click repairs mentioned in findings arrive in Stage 5** (Fixes).
+- **Tested on one PC so far.**
+
+---
+
 ## Version 0.1.0 · Stage 1: app foundation and hardware inventory · 2026-11-07
 
 ### New

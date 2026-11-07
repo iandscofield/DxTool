@@ -10,7 +10,7 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import type { Page } from "../lib/types";
+import type { Page, ScanReport } from "../lib/types";
 
 interface NavItem {
   id: Page;
@@ -22,9 +22,9 @@ interface NavItem {
 const main: NavItem[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
   { id: "hardware", label: "Hardware", icon: Cpu },
-  { id: "scans", label: "Scans", icon: ScanSearch, soon: true },
-  { id: "health", label: "Health", icon: HeartPulse, soon: true },
-  { id: "security", label: "Security", icon: ShieldCheck, soon: true },
+  { id: "scans", label: "Scans", icon: ScanSearch },
+  { id: "health", label: "Health", icon: HeartPulse },
+  { id: "security", label: "Security", icon: ShieldCheck },
 ];
 const tools: NavItem[] = [
   { id: "history", label: "History", icon: History, soon: true },
@@ -32,12 +32,33 @@ const tools: NavItem[] = [
   { id: "fixes", label: "Fixes", icon: Wrench, soon: true },
 ];
 
-export function Sidebar({ page, onNavigate, version }: { page: Page; onNavigate: (p: Page) => void; version: string }) {
+export function Sidebar({
+  page,
+  onNavigate,
+  version,
+  scanning,
+  report,
+}: {
+  page: Page;
+  onNavigate: (p: Page) => void;
+  version: string;
+  scanning?: boolean;
+  report?: ScanReport | null;
+}) {
+  const badge = (id: Page) => {
+    if (id === "scans" && scanning) return <span className="nav-badge live">running</span>;
+    if (id === "health" && report) {
+      const tone = report.score >= 90 ? "excellent" : report.score >= 75 ? "good" : report.score >= 50 ? "fair" : "poor";
+      return <span className={`nav-badge tone-${tone}`}>{report.score}</span>;
+    }
+    return null;
+  };
   const render = (n: NavItem) => (
     <button key={n.id} className={`nav-item ${page === n.id ? "active" : ""}`} onClick={() => onNavigate(n.id)}>
       <n.icon size={18} strokeWidth={1.8} />
       <span>{n.label}</span>
       {n.soon && <span className="soon">soon</span>}
+      {badge(n.id)}
     </button>
   );
   return (

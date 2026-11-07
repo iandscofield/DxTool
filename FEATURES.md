@@ -9,7 +9,8 @@ The first screen you see.
 - Computer name, make and model, Windows version and build, how long the PC has been on.
 - Boot mode (UEFI or legacy BIOS) and whether Secure Boot is on.
 - Quick tiles for processor, memory, graphics, storage, displays, network, battery and motherboard. Click any tile to jump to its details.
-- **Needs attention** list: anything the inventory flagged as a warning or problem (for example a device with a driver error, a nearly full drive, a worn battery).
+- **Health card**: run a Fast scan with one click, or see the latest health score.
+- **Needs attention** list: anything the inventory or the latest health scan flagged as a warning or problem (for example a failing drive, a blue screen, a device with a driver error, a nearly full drive, a worn battery).
 
 ## Hardware inventory ✅
 Every piece of hardware Windows can see, in as much detail as Windows reports.
@@ -39,6 +40,49 @@ Every piece of hardware Windows can see, in as much detail as Windows reports.
 
 **Driver details:** for every device, its driver version, date, maker, INF file, whether it's digitally signed and who signed it.
 
+## Scans ✅
+Scans only look. They never change anything on the PC.
+- **Fast scan**: 14 of the most important checks, looking back 30 days. Takes a few seconds.
+- **Full scan**: 19 checks, looking back 90 days. Usually well under a minute.
+- **Custom scan**: tick exactly which checks to run, including the slow **deep system file check** (5 to 15 minutes). DxTool remembers your picks.
+- **Live progress**: watch each check tick off as it finishes. You can keep using the rest of DxTool while a scan runs.
+- Checks that need administrator rights say so. Without admin rights they still run but give partial results, and DxTool tells you which ones.
+
+## Health ✅
+The results of the latest scan.
+- **Health score** from 0 to 100, with a grade (Excellent, Good, Fair, Poor) and a one-line verdict.
+- **Findings**, most serious first: **Problems** (red), **Warnings** (amber) and **Notes** (blue, for your information only; they don't lower the score). Filter by type.
+- Click any finding for **what it means** in plain English, **what to do** about it, and the supporting facts for a technician. Findings that a future one-click repair will handle are marked.
+- **All checks**: every check with its one-line result. Click one to see the facts it measured and a full table of what it found (drives, crashes, events, drivers, startup programs and so on). The tables work like every other table in DxTool.
+
+### What the checks look at
+
+| Area | Check | What it finds |
+|---|---|---|
+| Storage | Drive health | Drives that report failing or degraded, SSD wear (% of life used), temperature, power-on hours, power cycles, errors the drive couldn't correct, failure prediction *(full detail needs admin)* |
+| Storage | Free space | Drives low on space (stricter for the Windows drive), size of temporary files and the Recycle Bin |
+| Storage | Drive and file system errors | Bad blocks, drive controller errors, retried reads and writes, file system corruption, duplicate disk IDs, with the drive named where possible |
+| Stability | Blue screens and unexpected shutdowns | Every blue screen with its **stop code explained in plain English** (about 50 common codes) and advice; crash dump files; times the PC lost power, froze or the power button was held |
+| Stability | Hardware errors | Processor, memory and PCI Express errors reported by the hardware (serious vs. self-corrected), graphics driver crashes and recoveries, processor slowed by heat or power limits, Windows Memory Diagnostic results |
+| Stability | Device problems | Devices that aren't working, are missing drivers or are disabled, with advice per problem code |
+| Stability | Drivers | Unsigned drivers, how old the graphics driver is, and a list of every third-party driver with version, date and age |
+| Stability | Service failures | Background services that failed to start or crashed, grouped by service |
+| Stability | App crashes | Programs that crashed or froze, how often, and the file most often involved |
+| Windows | Windows Update | When updates were last installed, a pending restart, updates that keep failing (Store app updates are separated out), a disabled Update service |
+| Windows | Windows system image | Asks Windows whether its repair source is damaged (DISM) *(needs admin)* |
+| Windows | Deep system file check | System File Checker in verify-only mode *(Custom scan only, needs admin)* |
+| Windows | Startup programs and boot time | Every program that starts with Windows (enabled or disabled), too many startup programs, how long startup takes |
+| Windows | Memory and performance | Memory in use, committed memory, uptime (reminds you to restart), processor load, page file, and the programs using the most memory |
+| Windows | Battery | Battery wear compared with its original capacity (laptops) |
+| Windows | Windows activation | Activated or not, edition, licence type, last 5 characters of the product key |
+| Security | Antivirus | Which antivirus is on, definition age, last quick and full scans, Tamper Protection, more than one antivirus running, threats Defender found |
+| Security | Firewall | Firewall on or off for each network type, and which one the current network uses |
+| Security | Device security | Secure Boot, TPM, BitLocker, User Account Control, memory integrity, Remote Desktop, old SMB1 file sharing |
+| Network | Network and internet | Internet access as Windows sees it, addresses, router address problems, slow wired links, weak Wi-Fi, proxy settings, custom hosts file entries. DxTool doesn't contact the internet for this |
+
+## Security page ✅
+The antivirus, firewall and device security results from the latest scan, all in one place. Virus scanning is coming in Stage 6.
+
 ## Simple and Advanced modes ✅
 - **Simple** shows the important facts with friendly names.
 - **Advanced** adds every raw property Windows reports (often 50+ per device), searchable, and lets you add any of them as a table column.
@@ -67,21 +111,8 @@ Click any item to open a side panel with everything about it: summary, connectio
 
 ## Coming in version 1 🔜
 
-### Scans (Stage 3)
-- **Fast Scan**: the most important checks in under a minute.
-- **Full Scan**: every check.
-- **Custom Scan**: pick which checks to run.
-- Health score and a list of findings ranked by how serious they are, each with a plain-English explanation and suggested fix.
-
-### Health checks (Stage 3)
-- Drive health: wear level, temperature, power-on hours, read/write errors.
-- Crash analysis: blue screens explained in plain English.
-- Event log review: hardware errors, unexpected shutdowns, failed drivers.
-- Windows health: pending updates, damaged system files, startup programs.
-- Security status: Defender, firewall, TPM, Secure Boot, BitLocker.
-
 ### History (Stage 4)
-- Every scan saved per machine; compare two scans to see what changed.
+- Every scan saved per machine; compare two scans to see what changed. (Right now only the latest scan is kept, and only until DxTool closes.)
 
 ### Reports (Stage 4)
 - HTML and PDF reports, readable by the PC owner and detailed enough for a technician.
@@ -105,3 +136,4 @@ Click any item to open a side panel with everything about it: summary, connectio
 - Bootable USB version: rescue files, find out why Windows won't start, fix boot problems, offline virus scan and removal.
 - Mac support for the desktop app.
 - Live temperature and fan sensors (needs a safe driver approach).
+- Naming the exact driver behind a blue screen by reading the full crash dump.

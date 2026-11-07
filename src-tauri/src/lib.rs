@@ -1,6 +1,7 @@
 //! Desktop app shell. Commands here are thin wrappers around the `dxcore` engine.
 
-use dxcore::model::Inventory;
+use dxcore::model::{CheckInfo, Inventory, ScanEvent, ScanReport};
+use tauri::ipc::Channel;
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -31,6 +32,25 @@ async fn get_inventory() -> Result<Inventory, String> {
         .map_err(|e| e.to_string())
 }
 
+/// Every health check, for the Custom scan picker.
+#[tauri::command]
+fn scan_catalog() -> Vec<CheckInfo> {
+    dxcore::health::catalog()
+}
+
+/// Runs a Fast, Full or Custom scan, streaming progress to the window.
+#[tauri::command]
+async fn run_scan(kind: String, checks: Vec<String>, on_event: Channel<ScanEvent>) -> Result<ScanReport, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let send = |e: ScanEvent| {
+            let _ = on_event.send(e);
+        };
+        dxcore::health::run_scan(&kind, &checks, &send)
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
 /// Restarts DxTool with administrator rights (Windows shows the UAC prompt).
 #[tauri::command]
 fn relaunch_as_admin(app: tauri::AppHandle) -> Result<(), String> {
@@ -42,7 +62,7 @@ fn relaunch_as_admin(app: tauri::AppHandle) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![app_info, get_inventory, relaunch_as_admin])
+        .invoke_handler(tauri::generate_handler![app_info, get_inventory, scan_catalog, run_scan, relaunch_as_admin])
         .run(tauri::generate_context!())
         .expect("error while running DxTool");
 }

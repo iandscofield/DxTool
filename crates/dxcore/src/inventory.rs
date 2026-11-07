@@ -379,7 +379,8 @@ fn system() -> Result<Vec<Item>, String> {
 
     // TPM (needs administrator)
     {
-        let tpm = ns_query("ROOT\\CIMV2\\Security\\MicrosoftTpm", "SELECT * FROM Win32_Tpm");
+        // Without administrator rights this query waits 5 seconds and then fails, so skip it.
+        let tpm = if platform::is_admin() { ns_query("ROOT\\CIMV2\\Security\\MicrosoftTpm", "SELECT * FROM Win32_Tpm") } else { Vec::new() };
         let mut it = new_item("tpm", "TPM security chip", "Trusted Platform Module");
         if let Some(t) = tpm.first() {
             let spec = t.s("SpecVersion").map(|s| s.split(',').next().unwrap_or("").trim().to_string());
@@ -996,7 +997,7 @@ fn network() -> Result<Vec<Item>, String> {
 
 // ───────────────────────────── Battery ─────────────────────────────
 
-fn battery() -> Result<Vec<Item>, String> {
+pub(crate) fn battery() -> Result<Vec<Item>, String> {
     let con = wmiutil::connect(WMI)?;
     let stat = wmiutil::query_opt(&con, "SELECT * FROM BatteryStaticData");
     let full = wmiutil::query_opt(&con, "SELECT * FROM BatteryFullChargedCapacity");

@@ -1,5 +1,5 @@
-import { invoke } from "@tauri-apps/api/core";
-import type { AppInfo, Inventory } from "./types";
+import { Channel, invoke } from "@tauri-apps/api/core";
+import type { AppInfo, CheckInfo, Inventory, ScanEvent, ScanKind, ScanReport } from "./types";
 
 /** True inside the DxTool window; false when the UI is opened in a normal browser during development. */
 export const inTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -18,8 +18,33 @@ export const api = {
       ? invoke<AppInfo>("app_info")
       : Promise.resolve<AppInfo>({ version: "dev", isAdmin: false, computerName: "Browser preview", firmware: "UEFI", debugBuild: true }),
   inventory: () => (inTauri ? invoke<Inventory>("get_inventory") : mock<Inventory>("inventory")),
+  catalog: () => (inTauri ? invoke<CheckInfo[]>("scan_catalog") : mock<CheckInfo[]>("catalog")),
+  runScan: (kind: ScanKind, checks: string[], onEvent: (e: ScanEvent) => void): Promise<ScanReport> => {
+    if (!inTauri) return mockScan(kind, checks, onEvent);
+    const ch = new Channel<ScanEvent>();
+    ch.onmessage = onEvent;
+    return invoke<ScanReport>("run_scan", { kind, checks, onEvent: ch });
+  },
   relaunchAsAdmin: () => (inTauri ? invoke<void>("relaunch_as_admin") : Promise.reject("Only available inside DxTool")),
 };
+
+// Development-only: replays a saved scan with fake timing so the progress view can be previewed.
+async function mockScan(kind: ScanKind, checks: string[], onEvent: (e: ScanEvent) => void): Promise<ScanReport> {
+  const [report, cat] = await Promise.all([mock<ScanReport>("scan"), mock<CheckInfo[]>("catalog")]);
+  const ids = cat.filter((c) => (kind === "fast" ? c.fast : kind === "full" ? !c.customOnly : checks.includes(c.id))).map((c) => c.id);
+  const results = report.results.filter((r) => ids.includes(r.id));
+  onEvent({ type: "started", checks: ids });
+  await Promise.all(
+    ids.map(async (id, i) => {
+      await new Promise((r) => setTimeout(r, 80 * i));
+      onEvent({ type: "checkStarted", id });
+      await new Promise((r) => setTimeout(r, 300 + Math.random() * 1200));
+      const r = results.find((x) => x.id === id);
+      onEvent({ type: "checkFinished", id, status: r?.status ?? "info", summary: r?.summary ?? "Not in snapshot", elapsedMs: r?.elapsedMs ?? 0 });
+    }),
+  );
+  return { ...report, kind, results, startedAt: new Date().toISOString() };
+}
 
 /** Read a value from localStorage, falling back safely if storage is unavailable. */
 export function loadPref<T>(key: string, fallback: T): T {

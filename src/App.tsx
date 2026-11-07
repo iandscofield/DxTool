@@ -4,9 +4,18 @@ import { Sidebar } from "./components/Sidebar";
 import { Overview } from "./pages/Overview";
 import { Hardware } from "./pages/Hardware";
 import { Placeholder } from "./pages/Placeholder";
+import { Scans } from "./pages/Scans";
+import { Health } from "./pages/Health";
+import { Security } from "./pages/Security";
 import { Settings } from "./pages/Settings";
 import { api, loadPref, savePref } from "./lib/api";
-import type { AppInfo, Inventory, Mode, Page, ThemePref } from "./lib/types";
+import type { AppInfo, CheckInfo, Inventory, Mode, Page, ScanEvent, ScanKind, ScanReport, ScanState, ThemePref } from "./lib/types";
+
+function applyScanEvent(s: ScanState, e: ScanEvent): ScanState {
+  if (e.type === "started") return { ...s, order: e.checks, progress: Object.fromEntries(e.checks.map((id) => [id, { state: "waiting" as const }])) };
+  if (e.type === "checkStarted") return { ...s, progress: { ...s.progress, [e.id]: { state: "running" } } };
+  return { ...s, progress: { ...s.progress, [e.id]: { state: "done", status: e.status, summary: e.summary, elapsedMs: e.elapsedMs } } };
+}
 
 export default function App() {
   const [page, setPage] = useState<Page>("overview");
@@ -17,6 +26,28 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [hwCategory, setHwCategory] = useState<string | undefined>();
+  const [catalog, setCatalog] = useState<CheckInfo[]>([]);
+  const [scan, setScan] = useState<ScanState | null>(null);
+  const [report, setReport] = useState<ScanReport | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
+
+  const runScan = useCallback(
+    async (kind: ScanKind, checks: string[] = []) => {
+      if (scan) return;
+      setScanError(null);
+      setScan({ kind, order: [], progress: {}, startedAt: Date.now() });
+      setPage((p) => (p === "overview" || p === "scans" ? "health" : p));
+      try {
+        const r = await api.runScan(kind, checks, (e) => setScan((s) => (s ? applyScanEvent(s, e) : s)));
+        setReport(r);
+      } catch (e) {
+        setScanError(String(e));
+      } finally {
+        setScan(null);
+      }
+    },
+    [scan],
+  );
 
   useEffect(() => savePref("mode", mode), [mode]);
   useEffect(() => {
@@ -39,6 +70,7 @@ export default function App() {
 
   useEffect(() => {
     api.appInfo().then(setInfo).catch((e) => setError(String(e)));
+    api.catalog().then(setCatalog).catch(() => setCatalog([]));
     refresh();
   }, [refresh]);
 
@@ -61,6 +93,12 @@ export default function App() {
   let content: React.ReactNode;
   if (page === "settings") {
     content = <Settings theme={theme} setTheme={setTheme} mode={mode} setMode={setMode} info={info} onElevate={elevate} />;
+  } else if (page === "scans") {
+    content = <Scans catalog={catalog} scan={scan} report={report} info={info} onRun={runScan} onViewResults={() => setPage("health")} />;
+  } else if (page === "health") {
+    content = <Health report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} />;
+  } else if (page === "security") {
+    content = <Security report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} />;
   } else if (page !== "overview" && page !== "hardware") {
     content = <Placeholder page={page} />;
   } else if (!inventory) {
@@ -75,14 +113,25 @@ export default function App() {
       <Loading />
     );
   } else if (page === "overview") {
-    content = <Overview inventory={inventory} onOpenCategory={openCategory} onRefresh={refresh} refreshing={loading} />;
+    content = (
+      <Overview
+        inventory={inventory}
+        onOpenCategory={openCategory}
+        onRefresh={refresh}
+        refreshing={loading}
+        report={report}
+        scan={scan}
+        onRunScan={runScan}
+        onOpenHealth={() => setPage("health")}
+      />
+    );
   } else {
     content = <Hardware inventory={inventory} mode={mode} initialCategory={hwCategory} />;
   }
 
   return (
     <div className="app">
-      <Sidebar page={page} onNavigate={setPage} version={info?.version ?? "0.1.0"} />
+      <Sidebar page={page} onNavigate={setPage} version={info?.version ?? "0.1.0"} scanning={!!scan} report={report} />
       <div className="main">
         <header className="topbar">
           <div className="topbar-title">{info?.computerName ?? "This PC"}</div>
@@ -110,6 +159,14 @@ export default function App() {
             </span>
             <button className="btn small" onClick={elevate}>
               Restart as administrator
+            </button>
+          </div>
+        )}
+        {scanError && (
+          <div className="banner error">
+            The scan could not finish: {scanError}
+            <button className="btn small ghost" onClick={() => setScanError(null)}>
+              Dismiss
             </button>
           </div>
         )}

@@ -2,36 +2,6 @@ import { Construction } from "lucide-react";
 import type { Page } from "../lib/types";
 
 const plans: Partial<Record<Page, { title: string; stage: string; items: string[] }>> = {
-  scans: {
-    title: "Scans",
-    stage: "Stage 3",
-    items: [
-      "Fast Scan: the most important checks in under a minute",
-      "Full Scan: every check, including slower ones",
-      "Custom Scan: choose exactly which checks to run",
-      "Overall health score with findings ranked by severity",
-    ],
-  },
-  health: {
-    title: "Health",
-    stage: "Stage 3",
-    items: [
-      "Drive health: wear level, temperature, power-on hours, read errors",
-      "Crash analysis: blue screens explained in plain English",
-      "Event log review: hardware errors, unexpected shutdowns, failed drivers",
-      "Windows health: pending updates, corrupted system files, slow startup items",
-      "Battery wear and charge history on laptops",
-    ],
-  },
-  security: {
-    title: "Security",
-    stage: "Stages 3 and 6",
-    items: [
-      "Defender, firewall, TPM, Secure Boot and BitLocker status",
-      "Virus scan using Microsoft Defender's engine",
-      "Second-opinion scan with ClamAV and downloadable threat databases",
-    ],
-  },
   history: {
     title: "History",
     stage: "Stage 4",
