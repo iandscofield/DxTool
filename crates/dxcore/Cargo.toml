@@ -1,0 +1,22 @@
+[package]
+name = "dxcore"
+description = "DxTool diagnostic engine: hardware inventory, health checks and scans"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = "0.4"
+
+[target.'cfg(windows)'.dependencies]
+wmi = "0.18"
+winreg = "0.55"
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Devices_DeviceAndDriverInstallation",
+    "Win32_UI_Shell",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_System_SystemInformation",
+] }
