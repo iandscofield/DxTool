@@ -22,3 +22,6 @@ public/__mock/
 
 # Working copy of the requirements doc (the tracked copy lives in docs/)
 /Requirements-Scaffold.docx
+
+# Portable copy of the built app for local testing
+/portable/

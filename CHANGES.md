@@ -4,6 +4,15 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.3.2 · PDF export fix · 2026-11-07
+
+### Fixed
+- **Saving a report as PDF failed when DxTool was running as administrator.** Edge (which makes the PDF) restarts itself as a normal user when started from an administrator program. DxTool now stops that and waits for the PDF to finish writing.
+- If a PDF still can't be made, the HTML version is kept, and the message says where it is so you can print it from a browser.
+- Leftover temporary files from making PDFs are now cleaned up.
+
+---
+
 ## Version 0.3.1 · Color themes · 2026-11-07
 
 ### New
