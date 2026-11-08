@@ -95,7 +95,7 @@ Turn any scan into a report you can give to the PC's owner.
 - **Save as PDF or HTML.** Reports are saved in `DxTool-Data\reports\<PC>`, with **Open** and **Show in folder** buttons. PDFs are made by Microsoft Edge, which is built into Windows, so nothing extra is needed.
 - **Written for the owner first:** the score and a one-line verdict, then "What needs attention" with what to do about each item.
 - **Detailed enough for a technician:** optional technical section with evidence, measured facts and detail tables for every check.
-- **Options per report:** title, who it's prepared for, your own technician notes, and whether to include computer details, notes, the list of checks and the technical section.
+- **Options per report:** title, who it's prepared for, your own technician notes, and whether to include computer details, notes, the list of checks, virus scans and repairs run after the scan, and the technical section.
 - **Branding:** your logo, company name, contact details and technician name at the top. Set them once in **Settings**; each can be hidden in Settings or per report.
 - The footer records the DxTool version, scan type, whether it ran as administrator, and which checks were partial.
 
@@ -124,7 +124,50 @@ Repairs live in their own section, separate from diagnosis.
 **Driver updates (from Extra Features 1):** checked online only when you click. DxTool warns when an offered driver is *older* than the one you have, or is a BIOS/firmware update. Older offers can't be selected.
 
 ## Security page ✅
-The antivirus, firewall and device security results from the latest scan, all in one place. Virus scanning is coming in Stage 6.
+The antivirus, firewall and device security results from the latest scan, all in one place, with a shortcut to the Virus scan page.
+
+## Virus scan ✅
+Two scanners, side by side.
+
+**Microsoft Defender** (built into Windows)
+- **Quick scan** (a few minutes), **Full scan** (every file, can take an hour or more), or **scan a folder or a single file**.
+- Shows whether real-time protection is on, how old the virus definitions are, and when the last quick and full scans ran.
+- **Update definitions** button downloads Microsoft's latest.
+- If Defender finds something but doesn't remove it, **Remove with Defender** asks it to quarantine everything it found. DxTool waits for Defender to finish, then shows what happened to each file.
+- If another antivirus is protecting the PC (so Defender is switched off), DxTool says which one and suggests ClamAV instead.
+
+**ClamAV second opinion** (optional, downloaded only when you click)
+- Free, open-source scanner from Cisco Talos. It catches things one antivirus can miss and runs alongside Defender without conflicts.
+- **Download ClamAV** gets the official Windows version from ClamAV's GitHub releases, keeps only the scanner and the updater, then downloads the virus databases (about 450 MB the first time, about 300 MB on disk, inside `DxTool-Data\clamav`).
+- **Update databases** fetches the newest virus signatures. The databases' age is shown, with a warning when they're more than a week old.
+- **Quick scan:** Downloads, Desktop, temp folders, startup folders, programs set to start automatically, and runnable files in AppData and ProgramData. **Full scan:** every fixed drive (can take several hours). Or **scan a folder or file**.
+- Real progress: "12,345 of 50,000 files", the file being scanned, and threats as they're found.
+- **Remove ClamAV** deletes it and its databases to free the space.
+
+**Dealing with threats**
+- Each threat shows its name, the file, and what has happened to it so far.
+- **Quarantine** (recommended) moves the file into DxTool's quarantine. It's stored scrambled so it can't run, and Defender won't flag it again. **Restore** puts it back, after a warning; **Delete** removes it for good.
+- **Delete** permanently, after a confirmation that offers quarantine instead.
+- **Show** opens the file's folder.
+- **Stop** button on every scan and download.
+- Every scan is saved in the PC's **scan history**, and reports can include a **Virus scans** section listing the scans and every threat found.
+
+## Claude AI assistant ✅
+Connect DxTool to Claude so you can ask things like "why does my PC keep crashing?" and get an answer based on real data from the PC. Set it up in **Settings → Claude AI assistant**.
+- **Connect to Claude Desktop** in one click. DxTool adds itself to Claude Desktop's settings and keeps a backup of the old file. **Disconnect** removes it again.
+- **Claude Code:** a ready-to-copy command for Claude in the terminal or the Code tab.
+- **Preview** shows exactly what Claude will see.
+- If you move the DxTool folder, Settings notices and offers **Update connection**.
+- What Claude can do through DxTool:
+  - see a summary of the PC and its latest score;
+  - run Fast or Full health scans and read every finding with its advice;
+  - look through saved scans for this and other PCs;
+  - read the full hardware inventory;
+  - search the Windows event logs;
+  - check antivirus status and virus scan results;
+  - see which DxTool fixes exist and which have already been run.
+- **Claude can't run repairs or delete files.** It recommends DxTool's fixes by name, and you run them in DxTool, which makes a restore point first.
+- Needs Claude Desktop or Claude Code and a Claude account. DxTool itself sends nothing anywhere: Claude asks, and DxTool answers on your PC.
 
 ## Simple and Advanced modes ✅
 - **Simple** shows the important facts with friendly names.
@@ -156,13 +199,8 @@ Click any item to open a side panel with everything about it: summary, connectio
 
 ## Coming in version 1 🔜
 
-### Threat scanning and Claude (Stage 6)
-- Virus scan using Microsoft Defender's engine.
-- Second-opinion scan with ClamAV and downloadable threat databases.
-- Connect DxTool to Claude (MCP) so Claude can run checks and explain results.
-
 ### Distribution
-- Portable single program (no install needed), plus optional installer.
+- Portable single program (no install needed), plus optional installer that can also connect Claude during setup.
 - Automatic updates from GitHub releases.
 
 ## Extra Features 1 🔜 (after version 1)

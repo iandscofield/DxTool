@@ -63,6 +63,7 @@ export type Page =
   | "reports"
   | "fixes"
   | "security"
+  | "virus"
   | "settings";
 
 // ───────── Health scans (crates/dxcore/src/model.rs) ─────────
@@ -291,4 +292,113 @@ export interface FixState {
   requests: FixRequest[];
   steps: FixStepProgress[];
   startedAt: number;
+}
+
+// ───────── Virus scanning (crates/dxcore/src/model.rs) ─────────
+
+export interface DefenderStatus {
+  available: boolean;
+  reason: string;
+  realtime: boolean;
+  runningMode: string;
+  productVersion: string;
+  engineVersion: string;
+  signatureVersion: string;
+  signatureUpdated: string;
+  signatureAgeDays: number | null;
+  quickScanAgeDays: number | null;
+  fullScanAgeDays: number | null;
+  otherAntivirus: string[];
+}
+
+export interface ClamStatus {
+  installed: boolean;
+  version: string;
+  databases: boolean;
+  dbVersion: string;
+  dbDate: string;
+  dbAgeDays: number | null;
+  signatures: number;
+  folder: string;
+  sizeBytes: number;
+}
+
+export interface AvStatus {
+  defender: DefenderStatus;
+  clamav: ClamStatus;
+  isAdmin: boolean;
+}
+
+export type AvEngine = "defender" | "clamav";
+export type AvKind = "quick" | "full" | "custom";
+
+export interface Threat {
+  name: string;
+  path: string;
+  engine: AvEngine;
+  severity: string;
+  status: "active" | "quarantined" | "removed" | "allowed" | "failed";
+  action: string;
+}
+
+export interface VirusScan {
+  id: string;
+  machineId: string;
+  computerName: string;
+  engine: AvEngine;
+  kind: AvKind;
+  targets: string[];
+  startedAt: string;
+  elapsedMs: number;
+  filesScanned: number;
+  threats: Threat[];
+  outcome: "clean" | "threats" | "failed" | "cancelled";
+  message: string;
+  signatureVersion: string;
+  log: string[];
+  appVersion: string;
+}
+
+export interface QuarantineItem {
+  id: string;
+  originalPath: string;
+  threat: string;
+  engine: string;
+  quarantinedAt: string;
+  sizeBytes: number;
+}
+
+export type AvEvent =
+  | { type: "phase"; text: string }
+  | { type: "output"; line: string }
+  | { type: "progress"; done: number; total: number; current: string }
+  | { type: "threat"; threat: Threat };
+
+/** A virus scan, database download or install that is running (or just finished). */
+export interface AvJob {
+  op: "scan" | "update" | "install";
+  engine: AvEngine;
+  kind?: AvKind;
+  title: string;
+  phase: string;
+  lines: string[];
+  done: number;
+  total: number;
+  current: string;
+  threats: Threat[];
+  startedAt: number;
+  cancelling?: boolean;
+  finished?: boolean;
+  result?: VirusScan;
+  message?: string;
+  error?: string;
+}
+
+export interface ClaudeStatus {
+  desktopInstalled: boolean;
+  state: "set_up" | "moved" | "not_set_up";
+  configuredCommand: string;
+  configPath: string;
+  exe: string;
+  claudeCodeCommand: string;
 }

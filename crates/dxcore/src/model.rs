@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 /// Overall condition of an item.
-#[derive(Serialize, Clone, Copy, PartialEq, Eq, Debug, Default, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Debug, Default, PartialOrd, Ord)]
 #[serde(rename_all = "lowercase")]
 pub enum Status {
     #[default]
@@ -16,8 +16,8 @@ pub enum Status {
 
 /// One labelled value. `sort` holds a raw number or string so tables sort correctly
 /// ("900 MB" before "16 GB").
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
 pub struct Field {
     pub key: String,
     pub label: String,
@@ -25,8 +25,8 @@ pub struct Field {
     pub sort: Value,
 }
 
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
 pub struct Section {
     pub title: String,
     /// Raw sections hold every property Windows reports; the UI shows them in Advanced mode.
@@ -34,8 +34,8 @@ pub struct Section {
     pub fields: Vec<Field>,
 }
 
-#[derive(Serialize, Clone, Debug, Default)]
-#[serde(rename_all = "camelCase")]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
 pub struct Item {
     pub id: String,
     pub name: String,
@@ -156,8 +156,8 @@ pub struct CheckInfo {
 }
 
 /// Something a check noticed, explained in plain English.
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
 pub struct Finding {
     pub id: String,
     pub severity: Status,
@@ -190,8 +190,8 @@ impl Finding {
     }
 }
 
-#[derive(Serialize, Clone, Debug, Default)]
-#[serde(rename_all = "camelCase")]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
 pub struct CheckResult {
     pub id: String,
     pub title: String,
@@ -220,8 +220,8 @@ pub struct Counts {
     pub info: u32,
 }
 
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
 pub struct ScanReport {
     pub id: String,
     /// "fast", "full" or "custom".
@@ -391,4 +391,114 @@ impl DriverUpdate {
     pub fn is_firmware(&self) -> bool {
         self.driver_class.eq_ignore_ascii_case("Firmware")
     }
+}
+
+// ───────────────────────── Virus scanning ─────────────────────────
+
+/// Microsoft Defender's state, as far as scanning from DxTool is concerned.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct DefenderStatus {
+    /// True when DxTool can ask Defender to scan.
+    pub available: bool,
+    /// Why scanning isn't available, in plain English.
+    pub reason: String,
+    pub realtime: bool,
+    pub running_mode: String,
+    pub product_version: String,
+    pub engine_version: String,
+    pub signature_version: String,
+    pub signature_updated: String,
+    pub signature_age_days: Option<i64>,
+    pub quick_scan_age_days: Option<i64>,
+    pub full_scan_age_days: Option<i64>,
+    /// Other antivirus products registered with Windows Security.
+    pub other_antivirus: Vec<String>,
+}
+
+/// The ClamAV copy DxTool downloads into its data folder.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ClamStatus {
+    pub installed: bool,
+    pub version: String,
+    /// True once the virus databases have been downloaded.
+    pub databases: bool,
+    pub db_version: String,
+    pub db_date: String,
+    pub db_age_days: Option<i64>,
+    pub signatures: u64,
+    pub folder: String,
+    pub size_bytes: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct AvStatus {
+    pub defender: DefenderStatus,
+    pub clamav: ClamStatus,
+    pub is_admin: bool,
+}
+
+/// One detection from a virus scan.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct Threat {
+    pub name: String,
+    pub path: String,
+    /// "defender" or "clamav".
+    pub engine: String,
+    /// Defender's severity (Low, Moderate, High, Severe) when known.
+    pub severity: String,
+    /// "active" (still on disk), "quarantined", "removed", "allowed" or "failed".
+    pub status: String,
+    /// Plain-English description of what happened to it.
+    pub action: String,
+}
+
+/// A finished (or stopped) virus scan, saved with the machine's history.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct VirusScan {
+    pub id: String,
+    pub machine_id: String,
+    pub computer_name: String,
+    pub engine: String,
+    /// "quick", "full" or "custom".
+    pub kind: String,
+    pub targets: Vec<String>,
+    pub started_at: String,
+    pub elapsed_ms: u64,
+    pub files_scanned: u64,
+    pub threats: Vec<Threat>,
+    /// "clean", "threats", "failed" or "cancelled".
+    pub outcome: String,
+    pub message: String,
+    pub signature_version: String,
+    pub log: Vec<String>,
+    pub app_version: String,
+}
+
+/// A file DxTool moved into its quarantine folder.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct QuarantineItem {
+    pub id: String,
+    pub original_path: String,
+    pub threat: String,
+    pub engine: String,
+    pub quarantined_at: String,
+    pub size_bytes: u64,
+}
+
+/// Live progress for virus scans, database downloads and installs.
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase", tag = "type")]
+pub enum AvEvent {
+    /// A new phase, e.g. "Loading virus databases".
+    Phase { text: String },
+    Output { line: String },
+    /// `total` is 0 when the amount of work isn't known.
+    Progress { done: u64, total: u64, current: String },
+    Threat { threat: Threat },
 }

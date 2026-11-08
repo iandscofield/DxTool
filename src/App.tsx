@@ -11,6 +11,8 @@ import { History } from "./pages/History";
 import { Reports } from "./pages/Reports";
 import { Fixes } from "./pages/Fixes";
 import { Settings } from "./pages/Settings";
+import { Virus } from "./pages/Virus";
+import { useAvJob } from "./lib/useAvJob";
 import { api, loadPref, savePref } from "./lib/api";
 import type { Accent, AppInfo, AppSettings, CheckInfo, FixEvent, FixInfo, FixRequest, FixRun, FixState, Inventory, MachineRecord, Mode, Page, ScanEvent, ScanKind, ScanReport, ScanState, ThemePref } from "./lib/types";
 import { defaultBranding } from "./lib/types";
@@ -64,6 +66,7 @@ export default function App() {
   const [fixState, setFixState] = useState<FixState | null>(null);
   const [fixRun, setFixRun] = useState<FixRun | null>(null);
   const [fixPreselect, setFixPreselect] = useState<string | null>(null);
+  const av = useAvJob(useCallback(() => {}, []));
 
   const runFixes = useCallback(
     async (requests: FixRequest[], skipRestorePoint: boolean) => {
@@ -256,7 +259,9 @@ export default function App() {
   } else if (page === "health") {
     content = <Health report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} currentMachineId={machineId} onReport={() => setPage("reports")} onFix={openFix} />;
   } else if (page === "security") {
-    content = <Security report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} onFix={openFix} />;
+    content = <Security report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} onFix={openFix} onOpenVirus={() => setPage("virus")} />;
+  } else if (page === "virus") {
+    content = <Virus av={av} machineId={machineId} mode={mode} />;
   } else if (page !== "overview" && page !== "hardware") {
     content = <Placeholder page={page} />;
   } else if (!inventory) {
@@ -289,7 +294,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Sidebar page={page} onNavigate={setPage} version={info?.version ?? "0.1.0"} scanning={!!scan} report={report} fixing={!!fixState && !fixRun} />
+      <Sidebar page={page} onNavigate={setPage} version={info?.version ?? "0.1.0"} scanning={!!scan} report={report} fixing={!!fixState && !fixRun} virusRunning={av.running} />
       <div className="main">
         <header className="topbar">
           <div className="topbar-title">{info?.computerName ?? "This PC"}</div>

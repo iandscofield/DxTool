@@ -8,6 +8,8 @@ pub mod fmt;
 pub mod model;
 
 #[cfg(windows)]
+pub mod av;
+#[cfg(windows)]
 pub mod devices;
 #[cfg(windows)]
 pub mod events;
@@ -21,6 +23,8 @@ pub mod history;
 pub mod inventory;
 #[cfg(windows)]
 pub mod machine;
+#[cfg(windows)]
+pub mod mcp;
 #[cfg(windows)]
 pub mod report;
 #[cfg(windows)]

@@ -4,6 +4,42 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.5.0 · Stage 6: Virus scanning and Claude · 2026-11-07
+
+### New
+- **Virus scan page.**
+  - **Microsoft Defender:** Quick, Full, folder or single-file scans, plus a button to update its definitions.
+  - **ClamAV second opinion:** a free extra scanner DxTool downloads only when you click, with its virus databases.
+  - Live progress, threats shown as they're found, and a Stop button.
+- **Choose what to do with each threat:**
+  - Remove with Defender.
+  - Quarantine: DxTool keeps a scrambled copy that can be restored later.
+  - Delete permanently, after a confirmation.
+- **DxTool quarantine** list with Restore and Delete.
+- **Virus scan history** for each PC. Reports can now include a **Virus scans** section.
+- **Claude AI assistant.**
+  - **Settings → Claude AI assistant** connects DxTool to Claude Desktop in one click, or gives a command for Claude Code.
+  - Claude can then run health scans and read the results, hardware details, event logs and antivirus status, and explain them in plain English.
+  - Claude can't run repairs or delete files; those stay in DxTool.
+- The Security page links to the new Virus scan page.
+
+### Good to know
+- **Defender without administrator rights:** it finds threats, but sometimes leaves them in place. "Remove with Defender" then quarantines them, which worked here without administrator rights.
+- **ClamAV's first download is large:** about 450 MB (the program, then the virus databases). ClamAV's servers limit how often databases can be downloaded; if they ask DxTool to wait, it says so.
+- **ClamAV needs memory:** a scan uses about 1.5 GB while it runs, and the first minute is spent loading its 3.6 million signatures.
+
+### Tested
+- **Defender:** found the standard harmless antivirus test file (EICAR) and reported it correctly. "Remove with Defender" quarantined it. One detection covering two files now lists both.
+- **DxTool's quarantine:** moving a file in, refusing to act twice, and restoring it, using a harmless test file.
+- **Claude connection:** Claude's start-up and tool messages, sent to the finished program. Connecting and disconnecting, tested on a copy of Claude Desktop's settings: other settings are kept and a backup is made.
+- **The new screens,** in the preview browser.
+
+### Not tested yet
+- **ClamAV itself.** My safety rules stop me from running programs downloaded from the internet, so I couldn't run ClamAV's download, database update or scan here. That code follows ClamAV's documented commands. **Please try "Download ClamAV" and a ClamAV quick scan**, and tell me if anything fails.
+- **Connecting your real Claude Desktop.** I didn't change your real Claude settings. Try **Connect to Claude Desktop** in Settings, then fully quit and reopen Claude Desktop.
+
+---
+
 ## Version 0.4.0 · Stage 5: Fixes · 2026-11-07
 
 ### New

@@ -1,6 +1,7 @@
 import { Monitor, Moon, Sun } from "lucide-react";
 import type { Accent, AppInfo, Branding, Mode, ThemePref } from "../lib/types";
 import { BrandingSettings } from "../components/BrandingSettings";
+import { ClaudeSettings } from "../components/ClaudeSettings";
 
 export function Settings({
   theme,
@@ -89,6 +90,8 @@ export function Settings({
       </section>
 
       <BrandingSettings branding={branding} onChange={onBranding} />
+
+      <ClaudeSettings />
 
       <section className="card">
         <h2>About</h2>

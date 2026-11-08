@@ -3,7 +3,7 @@
 
 mod actions;
 pub mod drivers;
-mod runner;
+pub mod runner;
 
 use std::time::Instant;
 

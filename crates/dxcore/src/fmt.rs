@@ -132,3 +132,16 @@ pub fn jedec_vendor(raw: &str) -> String {
 pub fn yes_no(b: bool) -> &'static str {
     if b { "Yes" } else { "No" }
 }
+
+/// 1234567 -> "1,234,567".
+pub fn thousands(n: u64) -> String {
+    let s = n.to_string();
+    let mut out = String::new();
+    for (i, c) in s.chars().enumerate() {
+        if i > 0 && (s.len() - i) % 3 == 0 {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    out
+}

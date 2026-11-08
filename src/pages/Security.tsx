@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Bug, ShieldCheck } from "lucide-react";
+import { Bug, ChevronRight, ShieldCheck } from "lucide-react";
 import type { CheckInfo, Mode, ScanKind, ScanReport, ScanState } from "../lib/types";
 import { ScanProgress } from "../components/ScanProgress";
 import { FindingList, collectFindings } from "../components/FindingList";
@@ -13,6 +13,7 @@ export function Security({
   mode,
   onRun,
   onFix,
+  onOpenVirus,
 }: {
   report: ScanReport | null;
   scan: ScanState | null;
@@ -20,6 +21,7 @@ export function Security({
   mode: Mode;
   onRun: (kind: ScanKind, checks?: string[]) => void;
   onFix: (fixId: string) => void;
+  onOpenVirus: () => void;
 }) {
   const results = useMemo(() => (report?.results ?? []).filter((r) => r.group === "Security"), [report]);
   const findings = useMemo(() => collectFindings(results), [results]);
@@ -57,13 +59,14 @@ export function Security({
           </section>
         </>
       )}
-      <section className="card coming">
+      <button className="card coming link-card" onClick={onOpenVirus}>
         <Bug size={18} />
         <div>
-          <b>Virus scanning is coming in Stage 6</b>
-          <div className="muted small">Scan with Microsoft Defender's engine from here, plus a second-opinion scan with ClamAV and downloadable threat databases.</div>
+          <b>Scan for viruses</b>
+          <div className="muted small">Run a Microsoft Defender scan, or get a second opinion from ClamAV, on the Virus scan page.</div>
         </div>
-      </section>
+        <ChevronRight size={16} className="chev" />
+      </button>
     </div>
   );
 }

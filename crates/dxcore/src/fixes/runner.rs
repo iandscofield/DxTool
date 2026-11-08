@@ -3,6 +3,7 @@
 use std::io::{Read, Write};
 use std::os::windows::process::CommandExt;
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
@@ -73,6 +74,21 @@ impl LineSplitter {
 /// Runs a program, calling `on_line` for every line of output (stdout and stderr).
 /// Returns the exit code and all lines.
 pub fn run_streaming(exe: &str, args: &[&str], stdin_text: Option<&str>, timeout: Duration, on_line: &dyn Fn(&str)) -> Result<(i32, Vec<String>), String> {
+    run_cancellable(exe, args, stdin_text, timeout, None, on_line)
+}
+
+/// Message returned when a run is stopped through the cancel flag.
+pub const CANCELLED: &str = "Stopped by the user.";
+
+/// Like `run_streaming`, but stops the program when `cancel` becomes true.
+pub fn run_cancellable(
+    exe: &str,
+    args: &[&str],
+    stdin_text: Option<&str>,
+    timeout: Duration,
+    cancel: Option<&AtomicBool>,
+    on_line: &dyn Fn(&str),
+) -> Result<(i32, Vec<String>), String> {
     let mut child = Command::new(exe)
         .args(args)
         .stdin(if stdin_text.is_some() { Stdio::piped() } else { Stdio::null() })
@@ -121,6 +137,10 @@ pub fn run_streaming(exe: &str, args: &[&str], stdin_text: Option<&str>, timeout
         for l in fresh {
             on_line(&l);
             lines.push(l);
+        }
+        if code.is_none() && cancel.is_some_and(|c| c.load(Ordering::SeqCst)) {
+            let _ = child.kill();
+            return Err(CANCELLED.into());
         }
         if code.is_none() {
             match child.try_wait() {

@@ -1,6 +1,6 @@
 //! Desktop app shell. Commands here are thin wrappers around the `dxcore` engine.
 
-use dxcore::model::{CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineRecord, ScanEvent, ScanReport};
+use dxcore::model::{AvEvent, AvStatus, QuarantineItem, VirusScan, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineRecord, ScanEvent, ScanReport};
 use serde_json::Value;
 use tauri::ipc::Channel;
 
@@ -185,9 +185,126 @@ fn relaunch_as_admin(app: tauri::AppHandle) -> Result<(), String> {
     Ok(())
 }
 
+// ───────────────────────── Virus scanning ─────────────────────────
+
+async fn blocking<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> Result<T, String> {
+    tauri::async_runtime::spawn_blocking(f).await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+async fn av_status() -> Result<AvStatus, String> {
+    blocking(dxcore::av::status).await
+}
+
+#[tauri::command]
+async fn virus_scan(engine: String, kind: String, paths: Vec<String>, on_event: Channel<AvEvent>) -> Result<VirusScan, String> {
+    blocking(move || dxcore::av::scan(&engine, &kind, &paths, &|e| {
+        let _ = on_event.send(e);
+    }))
+    .await?
+}
+
+#[tauri::command]
+fn av_cancel() {
+    dxcore::av::cancel();
+}
+
+#[tauri::command]
+async fn av_update(engine: String, on_event: Channel<AvEvent>) -> Result<String, String> {
+    blocking(move || {
+        let send = |e: AvEvent| {
+            let _ = on_event.send(e);
+        };
+        if engine == "defender" { dxcore::av::defender::update(&send) } else { dxcore::av::clamav::update(&send) }
+    })
+    .await?
+}
+
+#[tauri::command]
+async fn clamav_install(on_event: Channel<AvEvent>) -> Result<String, String> {
+    blocking(move || dxcore::av::clamav::install(&|e| {
+        let _ = on_event.send(e);
+    }))
+    .await?
+}
+
+#[tauri::command]
+async fn clamav_remove() -> Result<(), String> {
+    blocking(dxcore::av::clamav::remove).await?
+}
+
+#[tauri::command]
+fn virus_scans(machine_id: String) -> Vec<VirusScan> {
+    dxcore::av::scans(&machine_id)
+}
+
+#[tauri::command]
+fn delete_virus_scan(machine_id: String, scan_id: String) -> Result<(), String> {
+    dxcore::av::delete_scan(&machine_id, &scan_id)
+}
+
+#[tauri::command]
+async fn defender_remove(machine_id: String, scan_id: String) -> Result<VirusScan, String> {
+    blocking(move || dxcore::av::defender::remove_active(&machine_id, &scan_id)).await?
+}
+
+#[tauri::command]
+fn threat_quarantine(machine_id: String, scan_id: String, path: String) -> Result<QuarantineItem, String> {
+    dxcore::av::quarantine(&machine_id, &scan_id, &path)
+}
+
+#[tauri::command]
+fn threat_delete(machine_id: String, scan_id: String, path: String) -> Result<(), String> {
+    dxcore::av::delete_threat(&machine_id, &scan_id, &path)
+}
+
+#[tauri::command]
+fn quarantine_list() -> Vec<QuarantineItem> {
+    dxcore::av::quarantine_list()
+}
+
+#[tauri::command]
+fn quarantine_restore(id: String) -> Result<String, String> {
+    dxcore::av::restore(&id)
+}
+
+#[tauri::command]
+fn quarantine_delete(id: String) -> Result<(), String> {
+    dxcore::av::delete_quarantined(&id)
+}
+
+#[tauri::command]
+fn open_windows_security() -> Result<(), String> {
+    dxcore::av::open_windows_security()
+}
+
+// ───────────────────────── Claude ─────────────────────────
+
+#[tauri::command]
+fn claude_status() -> Value {
+    dxcore::mcp::claude_status()
+}
+
+#[tauri::command]
+fn claude_setup(remove: bool) -> Result<String, String> {
+    dxcore::mcp::claude_setup(remove)
+}
+
+/// Runs one MCP tool so the Settings page can show what Claude will see.
+#[tauri::command]
+async fn mcp_try_tool(name: String) -> Result<String, String> {
+    blocking(move || dxcore::mcp::call_tool(&name, &serde_json::json!({}))).await?
+}
+
+/// `DxTool.exe --mcp`: serve Claude over stdin/stdout instead of opening a window.
+pub fn run_mcp() {
+    dxcore::mcp::serve(env!("CARGO_PKG_VERSION"));
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             app_info,
             get_inventory,
@@ -213,7 +330,25 @@ pub fn run() {
             open_system_restore,
             restart_pc,
             cancel_restart,
-            relaunch_as_admin
+            relaunch_as_admin,
+            av_status,
+            virus_scan,
+            av_cancel,
+            av_update,
+            clamav_install,
+            clamav_remove,
+            virus_scans,
+            delete_virus_scan,
+            defender_remove,
+            threat_quarantine,
+            threat_delete,
+            quarantine_list,
+            quarantine_restore,
+            quarantine_delete,
+            open_windows_security,
+            claude_status,
+            claude_setup,
+            mcp_try_tool
         ])
         .run(tauri::generate_context!())
         .expect("error while running DxTool");

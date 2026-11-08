@@ -1,4 +1,5 @@
 import {
+  Bug,
   Cpu,
   FileText,
   HeartPulse,
@@ -25,6 +26,7 @@ const main: NavItem[] = [
   { id: "scans", label: "Scans", icon: ScanSearch },
   { id: "health", label: "Health", icon: HeartPulse },
   { id: "security", label: "Security", icon: ShieldCheck },
+  { id: "virus", label: "Virus scan", icon: Bug },
 ];
 const tools: NavItem[] = [
   { id: "history", label: "History", icon: History },
@@ -39,6 +41,7 @@ export function Sidebar({
   scanning,
   report,
   fixing,
+  virusRunning,
 }: {
   page: Page;
   onNavigate: (p: Page) => void;
@@ -46,9 +49,11 @@ export function Sidebar({
   scanning?: boolean;
   report?: ScanReport | null;
   fixing?: boolean;
+  virusRunning?: boolean;
 }) {
   const badge = (id: Page) => {
     if (id === "scans" && scanning) return <span className="nav-badge live">running</span>;
+    if (id === "virus" && virusRunning) return <span className="nav-badge live">running</span>;
     if (id === "fixes" && fixing) return <span className="nav-badge live">running</span>;
     if (id === "health" && report) {
       const tone = report.score >= 90 ? "excellent" : report.score >= 75 ? "good" : report.score >= 50 ? "fair" : "poor";

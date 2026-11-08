@@ -1,7 +1,7 @@
 // Builds a self-contained HTML report from a scan. The same HTML is shown in the
 // preview, saved as an .html file, and printed to PDF by Edge.
 
-import type { Branding, CheckResult, Finding, FixRun, ScanReport, Status } from "./types";
+import type { Branding, CheckResult, Finding, FixRun, ScanReport, Status, VirusScan } from "./types";
 
 export interface ReportOptions {
   title: string;
@@ -12,6 +12,7 @@ export interface ReportOptions {
   includeChecks: boolean;
   includeTechnical: boolean;
   includeRepairs: boolean;
+  includeVirus: boolean;
   showLogo: boolean;
   showCompany: boolean;
   showContact: boolean;
@@ -27,6 +28,7 @@ export const defaultReportOptions: ReportOptions = {
   includeChecks: true,
   includeTechnical: false,
   includeRepairs: true,
+  includeVirus: true,
   showLogo: true,
   showCompany: true,
   showContact: true,
@@ -97,7 +99,7 @@ function itemTable(check: CheckResult) {
   </tbody></table>${more > 0 ? `<div class="more">…and ${more} more, available in DxTool.</div>` : ""}`;
 }
 
-export function buildReportHtml(r: ScanReport, o: ReportOptions, b: Branding, repairs: FixRun[] = []): string {
+export function buildReportHtml(r: ScanReport, o: ReportOptions, b: Branding, repairs: FixRun[] = [], virus: VirusScan[] = []): string {
   const m = r.machine;
   const when = new Date(r.startedAt);
   const dateText = when.toLocaleString([], { dateStyle: "long", timeStyle: "short" });
@@ -110,6 +112,29 @@ export function buildReportHtml(r: ScanReport, o: ReportOptions, b: Branding, re
   const stepLabel: Record<string, string> = { ok: "Done", warning: "Done with warnings", failed: "Failed", skipped: "Skipped" };
   const stepTone: Record<string, Status> = { ok: "ok", warning: "warn", failed: "error", skipped: "info" };
   const repairRuns = o.includeRepairs ? repairs.filter((f) => f.startedAt >= r.startedAt).sort((a, b2) => a.startedAt.localeCompare(b2.startedAt)) : [];
+  const engineLabel: Record<string, string> = { defender: "Microsoft Defender", clamav: "ClamAV" };
+  const kindLabel: Record<string, string> = { quick: "Quick", full: "Full", custom: "Custom" };
+  const outcomeLabel: Record<string, string> = { clean: "No threats found", threats: "Threats found", failed: "Could not finish", cancelled: "Stopped early" };
+  const virusRuns = o.includeVirus ? virus.filter((v) => v.startedAt >= r.startedAt).sort((a, b2) => a.startedAt.localeCompare(b2.startedAt)) : [];
+  const virusHtml = virusRuns.length
+    ? `<h2>Virus scans</h2>
+      <table class="grid"><thead><tr><th>When</th><th>Scanner</th><th>Result</th><th>Details</th></tr></thead><tbody>
+      ${virusRuns
+        .map((v) => {
+          const tone = v.outcome === "clean" ? "ok" : v.outcome === "threats" ? (v.threats.some((t) => t.status === "active") ? "error" : "warn") : "info";
+          return `<tr><td class="nw">${esc(new Date(v.startedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }))}</td><td class="nw">${esc(engineLabel[v.engine] ?? v.engine)} · ${esc(kindLabel[v.kind] ?? v.kind)}</td><td class="nw"><span class="dot ${tone}"></span>${esc(outcomeLabel[v.outcome] ?? v.outcome)}</td><td>${esc(v.message)}${v.filesScanned ? ` ${v.filesScanned.toLocaleString()} files scanned.` : ""}</td></tr>`;
+        })
+        .join("")}
+      </tbody></table>
+      ${
+        virusRuns.some((v) => v.threats.length)
+          ? `<h3>Threats found</h3><table class="grid"><thead><tr><th>Threat</th><th>File</th><th>What happened</th></tr></thead><tbody>${virusRuns
+              .flatMap((v) => v.threats)
+              .map((t) => `<tr><td>${esc(t.name)}</td><td>${esc(t.path)}</td><td class="nw">${esc(t.action)}</td></tr>`)
+              .join("")}</tbody></table>`
+          : ""
+      }`
+    : "";
   const repairsHtml = repairRuns.length
     ? `<h2>Repairs carried out</h2>${repairRuns
         .map(
@@ -240,6 +265,8 @@ ${
     ? important.map((x) => findingBlock(x.finding, x.check, false)).join("")
     : `<div class="good">No problems were found. Everything that was checked looks healthy.</div>`
 }
+
+${virusHtml}
 
 ${repairsHtml}
 
