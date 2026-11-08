@@ -208,3 +208,87 @@ export interface ScanState {
   progress: Record<string, CheckProgress>;
   startedAt: number;
 }
+
+// ───────── Fixes (crates/dxcore/src/model.rs) ─────────
+
+export type Risk = "low" | "medium" | "high";
+
+export interface FixInfo {
+  id: string;
+  title: string;
+  group: string;
+  description: string;
+  changes: string;
+  risk: Risk;
+  needsAdmin: boolean;
+  mayNeedRestart: boolean;
+  duration: string;
+}
+
+export interface FixRequest {
+  id: string;
+  options: Record<string, unknown>;
+}
+
+export type StepStatus = "ok" | "warning" | "failed" | "skipped";
+
+export interface FixStepResult {
+  id: string;
+  title: string;
+  status: StepStatus;
+  summary: string;
+  details: string[];
+  outputTail: string[];
+  needsRestart: boolean;
+  elapsedMs: number;
+}
+
+export interface FixRun {
+  id: string;
+  machineId: string;
+  computerName: string;
+  startedAt: string;
+  elapsedMs: number;
+  isAdmin: boolean;
+  restorePoint: FixStepResult | null;
+  restorePointSkipped: boolean;
+  steps: FixStepResult[];
+  needsRestart: boolean;
+  appVersion: string;
+}
+
+export type FixEvent =
+  | { type: "stepStarted"; id: string; title: string }
+  | { type: "output"; id: string; line: string }
+  | { type: "progress"; id: string; percent: number }
+  | { type: "stepFinished"; result: FixStepResult };
+
+export interface DriverUpdate {
+  updateId: string;
+  title: string;
+  manufacturer: string;
+  driverClass: string;
+  hardwareId: string;
+  newVersion: string;
+  newDate: string;
+  sizeBytes: number;
+  deviceName: string;
+  installedVersion: string;
+  installedDate: string;
+  warning: string;
+}
+
+export interface FixStepProgress {
+  id: string;
+  title: string;
+  state: "waiting" | "running" | "done";
+  percent?: number;
+  lines: string[];
+  result?: FixStepResult;
+}
+
+export interface FixState {
+  requests: FixRequest[];
+  steps: FixStepProgress[];
+  startedAt: number;
+}

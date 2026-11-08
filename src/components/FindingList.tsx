@@ -18,7 +18,7 @@ export function collectFindings(results: CheckResult[]): FindingRef[] {
 }
 
 /** Findings ranked by severity, each expandable to show what it means and what to do. */
-export function FindingList({ findings, emptyText }: { findings: FindingRef[]; emptyText?: string }) {
+export function FindingList({ findings, emptyText, onFix }: { findings: FindingRef[]; emptyText?: string; onFix?: (fixId: string) => void }) {
   const [filter, setFilter] = useState<Status | "all">("all");
   const [open, setOpen] = useState<string | null>(null);
   const counts = { error: 0, warn: 0, info: 0, ok: 0 } as Record<Status, number>;
@@ -65,10 +65,10 @@ export function FindingList({ findings, emptyText }: { findings: FindingRef[]; e
                       </div>
                     </div>
                   )}
-                  {f.fix && (
-                    <div className="fix-note">
-                      <Wrench size={14} /> A one-click repair for this will be available in the Fixes section (coming in Stage 5).
-                    </div>
+                  {f.fix && onFix && (
+                    <button className="btn small ghost fix-link" onClick={() => onFix(f.fix!)}>
+                      <Wrench size={13} /> Fix this in the Fixes section
+                    </button>
                   )}
                   {f.evidence.filter((e) => e.display).length > 0 && (
                     <dl className="kv compact">

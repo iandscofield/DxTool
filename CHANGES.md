@@ -4,6 +4,47 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.4.0 · Stage 5: Fixes · 2026-11-07
+
+### New
+- **Fixes section.** It unlocks after this PC has been scanned and you've ticked two boxes acknowledging the risks.
+- **A restore point is created before every run.** If Windows can't make one, nothing runs. DxTool explains why and offers two ways forward: turn on System Protection, or continue without a restore point after a second warning.
+- **Eight fixes:**
+  - Clear temporary files.
+  - Repair the Windows system image (DISM).
+  - Repair Windows system files (SFC).
+  - Check a drive for errors (chkdsk).
+  - Reset Windows Update.
+  - Clear the DNS cache.
+  - Reset network settings.
+  - Install driver updates.
+- **Every fix shows "What it changes"** and its risk level. A confirmation screen lists everything before it runs.
+- **Driver updates from Windows Update:** the installed driver sits next to the newest available.
+  - Offers that are older than what's installed are flagged and can't be selected.
+  - BIOS/firmware updates carry an extra warning.
+  - On this PC, Windows Update offered a BIOS update from 2023 while the installed BIOS is from 2026. DxTool now catches that.
+- **Live progress** for each step, with the repair tool's own output for technicians.
+- **Restart button** when a fix needs a restart (30-second countdown you can cancel).
+- **"Undo with System Restore"** opens Windows' restore wizard.
+- **Fix log per PC.** Reports can include a "Repairs carried out" section for fixes run after the scan.
+- **"Fix this" buttons** on Health and Security findings jump straight to the matching fix. The Fixes page also shows "Suggested by your scan".
+
+### Safety details
+- Temporary file clean-up only ever touches the exact, well-known temp folders, and never follows links out of them.
+- Emptying the Recycle Bin is off by default and is called out as permanent in the confirmation.
+- Windows normally makes at most one restore point a day and silently skips the rest. DxTool briefly lifts that limit so a new one is really created, then puts the setting back.
+
+### Known limitations
+- **I could only test parts that don't need administrator rights:**
+  - Clearing a test temp folder.
+  - Checking Windows Update for drivers.
+  - The restore point rule (fixes don't run without one).
+
+  The repairs themselves and creating restore points need administrator rights, which I can't get. **Please try a low-risk fix first**, such as clearing the DNS cache, before the long repairs.
+- Installing driver updates accepts the driver makers' licence terms on your behalf, as Windows Update does.
+
+---
+
 ## Version 0.3.2 · PDF export fix · 2026-11-07
 
 ### Fixed

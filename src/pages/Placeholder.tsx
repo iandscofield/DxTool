@@ -2,15 +2,6 @@ import { Construction } from "lucide-react";
 import type { Page } from "../lib/types";
 
 const plans: Partial<Record<Page, { title: string; stage: string; items: string[] }>> = {
-  fixes: {
-    title: "Fixes",
-    stage: "Stage 5",
-    items: [
-      "Unlocked after a scan and a risk acknowledgement",
-      "A restore point is always created first",
-      "Clear temporary files, repair system files (SFC / DISM), update drivers, and more",
-    ],
-  },
 };
 
 export function Placeholder({ page }: { page: Page }) {

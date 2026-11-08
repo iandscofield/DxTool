@@ -1,7 +1,7 @@
 // Builds a self-contained HTML report from a scan. The same HTML is shown in the
 // preview, saved as an .html file, and printed to PDF by Edge.
 
-import type { Branding, CheckResult, Finding, ScanReport, Status } from "./types";
+import type { Branding, CheckResult, Finding, FixRun, ScanReport, Status } from "./types";
 
 export interface ReportOptions {
   title: string;
@@ -11,6 +11,7 @@ export interface ReportOptions {
   includeNotes: boolean;
   includeChecks: boolean;
   includeTechnical: boolean;
+  includeRepairs: boolean;
   showLogo: boolean;
   showCompany: boolean;
   showContact: boolean;
@@ -25,6 +26,7 @@ export const defaultReportOptions: ReportOptions = {
   includeNotes: true,
   includeChecks: true,
   includeTechnical: false,
+  includeRepairs: true,
   showLogo: true,
   showCompany: true,
   showContact: true,
@@ -95,7 +97,7 @@ function itemTable(check: CheckResult) {
   </tbody></table>${more > 0 ? `<div class="more">…and ${more} more, available in DxTool.</div>` : ""}`;
 }
 
-export function buildReportHtml(r: ScanReport, o: ReportOptions, b: Branding): string {
+export function buildReportHtml(r: ScanReport, o: ReportOptions, b: Branding, repairs: FixRun[] = []): string {
   const m = r.machine;
   const when = new Date(r.startedAt);
   const dateText = when.toLocaleString([], { dateStyle: "long", timeStyle: "short" });
@@ -105,6 +107,21 @@ export function buildReportHtml(r: ScanReport, o: ReportOptions, b: Branding): s
   const important = all.filter((x) => x.finding.severity === "error" || x.finding.severity === "warn");
   const notes = all.filter((x) => x.finding.severity === "info");
   const limited = r.results.filter((x) => x.limited);
+  const stepLabel: Record<string, string> = { ok: "Done", warning: "Done with warnings", failed: "Failed", skipped: "Skipped" };
+  const stepTone: Record<string, Status> = { ok: "ok", warning: "warn", failed: "error", skipped: "info" };
+  const repairRuns = o.includeRepairs ? repairs.filter((f) => f.startedAt >= r.startedAt).sort((a, b2) => a.startedAt.localeCompare(b2.startedAt)) : [];
+  const repairsHtml = repairRuns.length
+    ? `<h2>Repairs carried out</h2>${repairRuns
+        .map(
+          (f) => `<h3>${esc(new Date(f.startedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }))}</h3>
+      <table class="grid"><thead><tr><th>Repair</th><th>Result</th><th>Details</th></tr></thead><tbody>
+      ${[...(f.restorePoint ? [f.restorePoint] : []), ...f.steps]
+        .map((s) => `<tr><td><span class="dot ${stepTone[s.status] ?? "info"}"></span>${esc(s.title)}</td><td class="nw">${esc(stepLabel[s.status] ?? s.status)}</td><td>${esc(s.summary)}</td></tr>`)
+        .join("")}
+      </tbody></table>${f.restorePointSkipped ? `<p class="partial">Run without a restore point, at the user's request.</p>` : ""}`,
+        )
+        .join("")}`
+    : "";
 
   const logo = o.showLogo && b.logo ? `<img class="logo" src="${b.logo}" alt="">` : "";
   const company = o.showCompany && b.company.trim() ? `<div class="company">${esc(b.company)}</div>` : "";
@@ -223,6 +240,8 @@ ${
     ? important.map((x) => findingBlock(x.finding, x.check, false)).join("")
     : `<div class="good">No problems were found. Everything that was checked looks healthy.</div>`
 }
+
+${repairsHtml}
 
 ${o.notes.trim() ? `<h2>Technician notes</h2><div class="notes">${esc(o.notes)}</div>` : ""}
 

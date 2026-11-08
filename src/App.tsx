@@ -9,10 +9,31 @@ import { Health } from "./pages/Health";
 import { Security } from "./pages/Security";
 import { History } from "./pages/History";
 import { Reports } from "./pages/Reports";
+import { Fixes } from "./pages/Fixes";
 import { Settings } from "./pages/Settings";
 import { api, loadPref, savePref } from "./lib/api";
-import type { Accent, AppInfo, AppSettings, CheckInfo, Inventory, MachineRecord, Mode, Page, ScanEvent, ScanKind, ScanReport, ScanState, ThemePref } from "./lib/types";
+import type { Accent, AppInfo, AppSettings, CheckInfo, FixEvent, FixInfo, FixRequest, FixRun, FixState, Inventory, MachineRecord, Mode, Page, ScanEvent, ScanKind, ScanReport, ScanState, ThemePref } from "./lib/types";
 import { defaultBranding } from "./lib/types";
+
+function applyFixEvent(s: FixState, e: FixEvent): FixState {
+  const steps = [...s.steps];
+  const id = e.type === "stepFinished" ? e.result.id : e.id;
+  let i = steps.findIndex((x) => x.id === id);
+  if (i < 0) {
+    steps.push({ id, title: e.type === "stepFinished" ? e.result.title : e.type === "stepStarted" ? e.title : id, state: "waiting", lines: [] });
+    i = steps.length - 1;
+  }
+  const st = { ...steps[i] };
+  if (e.type === "stepStarted") st.state = "running";
+  else if (e.type === "output") st.lines = [...st.lines, e.line].slice(-500);
+  else if (e.type === "progress") st.percent = e.percent;
+  else {
+    st.state = "done";
+    st.result = e.result;
+  }
+  steps[i] = st;
+  return { ...s, steps };
+}
 
 function applyScanEvent(s: ScanState, e: ScanEvent): ScanState {
   if (e.type === "started") return { ...s, order: e.checks, progress: Object.fromEntries(e.checks.map((id) => [id, { state: "waiting" as const }])) };
@@ -38,6 +59,39 @@ export default function App() {
   const [machineId, setMachineId] = useState<string | null>(null);
   const [settings, setSettings] = useState<AppSettings>({ branding: defaultBranding });
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [fixCatalog, setFixCatalog] = useState<FixInfo[]>([]);
+  const [fixesUnlocked, setFixesUnlocked] = useState(false);
+  const [fixState, setFixState] = useState<FixState | null>(null);
+  const [fixRun, setFixRun] = useState<FixRun | null>(null);
+  const [fixPreselect, setFixPreselect] = useState<string | null>(null);
+
+  const runFixes = useCallback(
+    async (requests: FixRequest[], skipRestorePoint: boolean) => {
+      if (fixState && !fixRun) return;
+      const ordered = fixCatalog.filter((f) => requests.some((r) => r.id === f.id));
+      setFixRun(null);
+      setFixState({
+        requests,
+        startedAt: Date.now(),
+        steps: [
+          ...(skipRestorePoint ? [] : [{ id: "restore_point", title: "Create a restore point", state: "waiting" as const, lines: [] }]),
+          ...ordered.map((f) => ({ id: f.id, title: f.title, state: "waiting" as const, lines: [] })),
+        ],
+      });
+      try {
+        const run = await api.runFixes(requests, skipRestorePoint, (e) => setFixState((s) => (s ? applyFixEvent(s, e) : s)));
+        setFixRun(run);
+      } catch (e) {
+        setFixState(null);
+        setScanError(`Fixes could not run: ${e}`);
+      }
+    },
+    [fixState, fixRun, fixCatalog],
+  );
+  const openFix = (fixId: string) => {
+    setFixPreselect(fixId);
+    setPage("fixes");
+  };
 
   const refreshHistory = useCallback(async () => {
     try {
@@ -121,6 +175,7 @@ export default function App() {
   useEffect(() => {
     api.appInfo().then(setInfo).catch((e) => setError(String(e)));
     api.catalog().then(setCatalog).catch(() => setCatalog([]));
+    api.fixCatalog().then(setFixCatalog).catch(() => setFixCatalog([]));
     refresh();
   }, [refresh]);
 
@@ -172,6 +227,26 @@ export default function App() {
         }}
       />
     );
+  } else if (page === "fixes") {
+    content = (
+      <Fixes
+        info={info}
+        report={report}
+        machineId={machineId}
+        unlocked={fixesUnlocked}
+        onUnlock={() => setFixesUnlocked(true)}
+        onLock={() => setFixesUnlocked(false)}
+        fixState={fixState}
+        fixRun={fixRun}
+        onRunFixes={runFixes}
+        onClearRun={() => {
+          setFixState(null);
+          setFixRun(null);
+        }}
+        preselect={fixPreselect}
+        onRunScan={runScan}
+      />
+    );
   } else if (page === "reports") {
     content = (
       <Reports report={report} machines={machines} settings={settings} onPickScan={setReport} onRun={runScan} onOpenSettings={() => setPage("settings")} />
@@ -179,9 +254,9 @@ export default function App() {
   } else if (page === "scans") {
     content = <Scans catalog={catalog} scan={scan} report={report} info={info} onRun={runScan} onViewResults={() => setPage("health")} />;
   } else if (page === "health") {
-    content = <Health report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} currentMachineId={machineId} onReport={() => setPage("reports")} />;
+    content = <Health report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} currentMachineId={machineId} onReport={() => setPage("reports")} onFix={openFix} />;
   } else if (page === "security") {
-    content = <Security report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} />;
+    content = <Security report={report} scan={scan} catalog={catalog} mode={mode} onRun={runScan} onFix={openFix} />;
   } else if (page !== "overview" && page !== "hardware") {
     content = <Placeholder page={page} />;
   } else if (!inventory) {
@@ -214,7 +289,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Sidebar page={page} onNavigate={setPage} version={info?.version ?? "0.1.0"} scanning={!!scan} report={report} />
+      <Sidebar page={page} onNavigate={setPage} version={info?.version ?? "0.1.0"} scanning={!!scan} report={report} fixing={!!fixState && !fixRun} />
       <div className="main">
         <header className="topbar">
           <div className="topbar-title">{info?.computerName ?? "This PC"}</div>

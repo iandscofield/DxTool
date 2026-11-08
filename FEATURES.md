@@ -99,6 +99,30 @@ Turn any scan into a report you can give to the PC's owner.
 - **Branding:** your logo, company name, contact details and technician name at the top. Set them once in **Settings**; each can be hidden in Settings or per report.
 - The footer records the DxTool version, scan type, whether it ran as administrator, and which checks were partial.
 
+## Fixes ✅
+Repairs live in their own section, separate from diagnosis.
+- **Locked until you've scanned this PC and acknowledged the risks.** It locks again each time DxTool starts, or when you click Lock.
+- **A restore point is always created first.** If it can't be made, nothing runs. DxTool explains why, and offers to turn on System Protection, or to continue without a restore point after a second warning.
+- **"Undo with System Restore"** button to roll back.
+- **Suggested by your scan:** fixes that match the latest scan's findings are highlighted. Findings on the Health and Security pages have a "Fix this" button that takes you straight to the right fix.
+- **Before anything runs** you see exactly what each fix will change, with its risk level, and confirm.
+- **Live progress:** each step with a progress bar and the tool's own output.
+- **Restart button** when a fix needs one. It waits 30 seconds and can be cancelled.
+- **Fix log:** every run is saved with the PC's history, and reports can include a "Repairs carried out" section.
+
+| Fix | What it does | Risk |
+|---|---|---|
+| Clear temporary files | Your temp files, Windows temp files, old error reports and, if you tick it, the Recycle Bin. Files in use are skipped | Low |
+| Repair the Windows system image (DISM) | Repairs Windows' own repair source, downloading clean files from Microsoft | Low |
+| Repair Windows system files (SFC) | Replaces damaged protected Windows files (runs after DISM) | Low |
+| Check a drive for file system errors | Online chkdsk scan; repairs at next restart for C:, straight away for other drives | Medium |
+| Reset Windows Update | Clears stuck updates (old folders are kept as backups, not deleted) | Medium |
+| Clear the DNS cache | Fixes sites that won't load or load old versions | Low |
+| Reset network settings | Winsock and TCP/IP back to defaults (needs a restart) | Medium |
+| Install driver updates | Shows the driver installed now next to the newest from Windows Update; installs the ones you tick | Medium |
+
+**Driver updates (from Extra Features 1):** checked online only when you click. DxTool warns when an offered driver is *older* than the one you have, or is a BIOS/firmware update. Older offers can't be selected.
+
 ## Security page ✅
 The antivirus, firewall and device security results from the latest scan, all in one place. Virus scanning is coming in Stage 6.
 
@@ -132,18 +156,10 @@ Click any item to open a side panel with everything about it: summary, connectio
 
 ## Coming in version 1 🔜
 
-### Fixes (Stage 5)
-- Separate section, unlocked after a scan and a risk acknowledgement.
-- Restore point created before any change.
-- Clear temporary files, repair system files (SFC/DISM), update drivers, and more.
-
 ### Threat scanning and Claude (Stage 6)
 - Virus scan using Microsoft Defender's engine.
 - Second-opinion scan with ClamAV and downloadable threat databases.
 - Connect DxTool to Claude (MCP) so Claude can run checks and explain results.
-
-### Driver updates (Stage 5, from Extra Features 1)
-- For every device, show the installed driver version next to the newest version available. The newest version comes from Windows Update and, for graphics cards, from NVIDIA, AMD or Intel. Checked online only when you click.
 
 ### Distribution
 - Portable single program (no install needed), plus optional installer.
@@ -151,6 +167,7 @@ Click any item to open a side panel with everything about it: summary, connectio
 
 ## Extra Features 1 🔜 (after version 1)
 From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click.
+- **Newest graphics drivers straight from NVIDIA, AMD and Intel** (Windows Update is already used).
 - **Part prices:** find the current retail price of the parts in this PC.
 - **Upgrade recommendations:** for example "2 empty memory slots, adding 16 GB would help", "replace the hard drive with an SSD", or "this PC can't run Windows 11 because…".
 - **Game check:** compare a game's minimum and recommended requirements with this PC's hardware, including games already installed through Steam.

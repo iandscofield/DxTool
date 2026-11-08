@@ -134,3 +134,22 @@ pub fn reports_dir(machine_id: &str) -> Result<PathBuf, String> {
     fs::create_dir_all(&dir).map_err(|e| format!("Could not create the reports folder: {e}"))?;
     Ok(dir)
 }
+
+/// Saves a fix run in the machine's history.
+pub fn save_fix_run(run: &crate::model::FixRun) -> Result<PathBuf, String> {
+    let dir = machines_dir().join(safe(&run.machine_id)?).join("fixes");
+    fs::create_dir_all(&dir).map_err(|e| format!("Could not create the fix log folder: {e}"))?;
+    let path = dir.join(format!("{}.json", safe(&run.id)?));
+    fs::write(&path, serde_json::to_vec_pretty(run).map_err(|e| e.to_string())?).map_err(|e| format!("Could not save the fix log: {e}"))?;
+    Ok(path)
+}
+
+/// Every fix run for a machine, newest first.
+pub fn fix_runs(machine_id: &str) -> Vec<crate::model::FixRun> {
+    let Ok(id) = safe(machine_id) else { return vec![] };
+    let mut v: Vec<crate::model::FixRun> = fs::read_dir(machines_dir().join(id).join("fixes"))
+        .map(|rd| rd.flatten().filter_map(|e| serde_json::from_slice(&fs::read(e.path()).ok()?).ok()).collect())
+        .unwrap_or_default();
+    v.sort_by(|a, b| b.started_at.cmp(&a.started_at));
+    v
+}

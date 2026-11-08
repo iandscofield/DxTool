@@ -1,5 +1,5 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
-import type { AppInfo, AppSettings, CheckInfo, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
+import type { AppInfo, AppSettings, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
 import { defaultBranding } from "./types";
 
 /** True inside the DxTool window; false when the UI is opened in a normal browser during development. */
@@ -46,6 +46,26 @@ export const api = {
     inTauri ? invoke<string>("export_report", { machineId, name, html, format }) : Promise.reject("Saving reports only works inside DxTool"),
   openPath: (path: string) => (inTauri ? invoke<void>("open_path", { path }) : Promise.resolve()),
   showInFolder: (path: string) => (inTauri ? invoke<void>("show_in_folder", { path }) : Promise.resolve()),
+  fixCatalog: () => (inTauri ? invoke<FixInfo[]>("fix_catalog") : mock<FixInfo[]>("fixes")),
+  runFixes: (requests: FixRequest[], skipRestorePoint: boolean, onEvent: (e: FixEvent) => void): Promise<FixRun> => {
+    if (!inTauri) return mockFixes(requests, skipRestorePoint, onEvent);
+    const ch = new Channel<FixEvent>();
+    ch.onmessage = onEvent;
+    return invoke<FixRun>("run_fixes", { requests, skipRestorePoint, onEvent: ch });
+  },
+  checkDriverUpdates: (onLine: (l: string) => void): Promise<DriverUpdate[]> => {
+    if (!inTauri) return mock<DriverUpdate[]>("drivers");
+    const ch = new Channel<string>();
+    ch.onmessage = onLine;
+    return invoke<DriverUpdate[]>("check_driver_updates", { onLine: ch });
+  },
+  listFixRuns: (machineId: string) => (inTauri ? invoke<FixRun[]>("list_fix_runs", { machineId }) : Promise.resolve(loadPref<FixRun[]>("mockFixRuns", []))),
+  ntfsDrives: () => (inTauri ? invoke<[string, string, string][]>("ntfs_drives") : Promise.resolve<[string, string, string][]>([["C:", "Windows", "4.00 TB"], ["D:", "Games", "4.00 TB"]])),
+  restorePoints: () => (inTauri ? invoke<[number, string, string][]>("restore_points") : Promise.resolve<[number, string, string][]>([])),
+  enableSystemProtection: () => (inTauri ? invoke<void>("enable_system_protection") : Promise.resolve()),
+  openSystemRestore: () => (inTauri ? invoke<void>("open_system_restore") : Promise.resolve()),
+  restartPc: () => (inTauri ? invoke<void>("restart_pc") : Promise.resolve()),
+  cancelRestart: () => (inTauri ? invoke<void>("cancel_restart") : Promise.resolve()),
   relaunchAsAdmin: () => (inTauri ? invoke<void>("relaunch_as_admin") : Promise.reject("Only available inside DxTool")),
 };
 
@@ -65,6 +85,30 @@ async function mockScan(kind: ScanKind, checks: string[], onEvent: (e: ScanEvent
     }),
   );
   return { ...report, kind, results, startedAt: new Date().toISOString() };
+}
+
+// Development-only: pretends to run fixes so the progress view can be previewed.
+async function mockFixes(requests: FixRequest[], skip: boolean, onEvent: (e: FixEvent) => void): Promise<FixRun> {
+  const cat = await mock<FixInfo[]>("fixes");
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  const steps = [];
+  const ids = [...(skip ? [] : ["restore_point"]), ...cat.filter((c) => requests.some((r) => r.id === c.id)).map((c) => c.id)];
+  for (const id of ids) {
+    const title = id === "restore_point" ? "Create a restore point" : cat.find((c) => c.id === id)!.title;
+    onEvent({ type: "stepStarted", id, title });
+    for (let p = 0; p <= 100; p += 20) {
+      onEvent({ type: "progress", id, percent: p });
+      onEvent({ type: "output", id, line: `Working… ${p}%` });
+      await wait(150);
+    }
+    const result = { id, title, status: "ok" as const, summary: "Done (browser preview, nothing was changed).", details: [], outputTail: [], needsRestart: id === "sfc_repair", elapsedMs: 900 };
+    onEvent({ type: "stepFinished", result });
+    steps.push(result);
+  }
+  const rp = skip ? null : steps.shift()!;
+  const run: FixRun = { id: String(Date.now()), machineId: "preview", computerName: "Browser preview", startedAt: new Date().toISOString(), elapsedMs: 3000, isAdmin: true, restorePoint: rp, restorePointSkipped: skip, steps, needsRestart: steps.some((s) => s.needsRestart), appVersion: "dev" };
+  savePref("mockFixRuns", [run, ...loadPref<FixRun[]>("mockFixRuns", [])]);
+  return run;
 }
 
 /** Read a value from localStorage, falling back safely if storage is unavailable. */

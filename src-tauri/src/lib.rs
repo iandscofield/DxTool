@@ -1,6 +1,6 @@
 //! Desktop app shell. Commands here are thin wrappers around the `dxcore` engine.
 
-use dxcore::model::{CheckInfo, Inventory, MachineRecord, ScanEvent, ScanReport};
+use dxcore::model::{CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineRecord, ScanEvent, ScanReport};
 use serde_json::Value;
 use tauri::ipc::Channel;
 
@@ -112,6 +112,71 @@ fn show_in_folder(path: String) -> Result<(), String> {
     dxcore::platform::show_in_folder(&path)
 }
 
+#[tauri::command]
+fn fix_catalog() -> Vec<FixInfo> {
+    dxcore::fixes::catalog()
+}
+
+/// Runs the chosen fixes (restore point first unless skipped), streaming progress.
+#[tauri::command]
+async fn run_fixes(requests: Vec<FixRequest>, skip_restore_point: bool, on_event: Channel<FixEvent>) -> Result<FixRun, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let send = |e: FixEvent| {
+            let _ = on_event.send(e);
+        };
+        dxcore::fixes::run_fixes(&requests, skip_restore_point, &send)
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
+/// Asks Windows Update (online) which driver updates are available.
+#[tauri::command]
+async fn check_driver_updates(on_line: Channel<String>) -> Result<Vec<DriverUpdate>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        dxcore::fixes::drivers::check(&|l: &str| {
+            let _ = on_line.send(l.to_string());
+        })
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+fn list_fix_runs(machine_id: String) -> Vec<FixRun> {
+    dxcore::history::fix_runs(&machine_id)
+}
+
+#[tauri::command]
+fn ntfs_drives() -> Vec<(String, String, String)> {
+    dxcore::fixes::ntfs_drives()
+}
+
+#[tauri::command]
+async fn restore_points() -> Vec<(u64, String, String)> {
+    tauri::async_runtime::spawn_blocking(dxcore::fixes::restore_points).await.unwrap_or_default()
+}
+
+#[tauri::command]
+async fn enable_system_protection() -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(dxcore::fixes::enable_system_protection).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+fn open_system_restore() -> Result<(), String> {
+    dxcore::fixes::open_system_restore()
+}
+
+#[tauri::command]
+fn restart_pc() -> Result<(), String> {
+    dxcore::fixes::restart_pc()
+}
+
+#[tauri::command]
+fn cancel_restart() -> Result<(), String> {
+    dxcore::fixes::cancel_restart()
+}
+
 /// Restarts DxTool with administrator rights (Windows shows the UAC prompt).
 #[tauri::command]
 fn relaunch_as_admin(app: tauri::AppHandle) -> Result<(), String> {
@@ -138,6 +203,16 @@ pub fn run() {
             export_report,
             open_path,
             show_in_folder,
+            fix_catalog,
+            run_fixes,
+            check_driver_updates,
+            list_fix_runs,
+            ntfs_drives,
+            restore_points,
+            enable_system_protection,
+            open_system_restore,
+            restart_pc,
+            cancel_restart,
             relaunch_as_admin
         ])
         .run(tauri::generate_context!())

@@ -12,12 +12,14 @@ export function Security({
   catalog,
   mode,
   onRun,
+  onFix,
 }: {
   report: ScanReport | null;
   scan: ScanState | null;
   catalog: CheckInfo[];
   mode: Mode;
   onRun: (kind: ScanKind, checks?: string[]) => void;
+  onFix: (fixId: string) => void;
 }) {
   const results = useMemo(() => (report?.results ?? []).filter((r) => r.group === "Security"), [report]);
   const findings = useMemo(() => collectFindings(results), [results]);
@@ -43,7 +45,7 @@ export function Security({
               <h2>Findings</h2>
               <span className="muted small">From the {report?.kind} scan at {report && new Date(report.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
             </div>
-            <FindingList findings={findings} emptyText="No security problems found." />
+            <FindingList onFix={onFix} findings={findings} emptyText="No security problems found." />
           </section>
           <section className="card">
             <div className="card-head">

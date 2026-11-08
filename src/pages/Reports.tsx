@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FileDown, FileText, FolderOpen, Loader2, Settings as SettingsIcon } from "lucide-react";
-import type { AppSettings, MachineRecord, ScanKind, ScanReport } from "../lib/types";
+import type { AppSettings, FixRun, MachineRecord, ScanKind, ScanReport } from "../lib/types";
 import { api, inTauri, loadPref, savePref } from "../lib/api";
 import { buildReportHtml, defaultReportOptions, reportFileName, type ReportOptions } from "../lib/report";
 import { NoScanYet } from "./Health";
@@ -38,6 +38,11 @@ export function Reports({
   const [saved, setSaved] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingScan, setLoadingScan] = useState(false);
+  const [repairs, setRepairs] = useState<FixRun[]>([]);
+  useEffect(() => {
+    if (report?.machine?.id) api.listFixRuns(report.machine.id).then(setRepairs).catch(() => setRepairs([]));
+  }, [report?.machine?.id]);
+  const laterRepairs = report ? repairs.filter((f) => f.startedAt >= report.startedAt).length : 0;
 
   useEffect(() => {
     const { preparedFor: _p, notes: _n, ...keep } = opts;
@@ -48,7 +53,7 @@ export function Reports({
     setError(null);
   }, [report?.id]);
 
-  const html = useMemo(() => (report ? buildReportHtml(report, opts, b) : ""), [report, opts, b]);
+  const html = useMemo(() => (report ? buildReportHtml(report, opts, b, repairs) : ""), [report, opts, b, repairs]);
   const set = <K extends keyof ReportOptions>(k: K, v: ReportOptions[K]) => setOpts((o) => ({ ...o, [k]: v }));
 
   if (!report) {
@@ -131,6 +136,7 @@ export function Reports({
           {Toggle({ k: "includeComputer", label: "About this computer" })}
           {Toggle({ k: "includeNotes", label: "Notes (for your information)" })}
           {Toggle({ k: "includeChecks", label: "List of everything checked" })}
+          {Toggle({ k: "includeRepairs", label: `Repairs carried out after this scan${laterRepairs ? ` (${laterRepairs})` : " (none yet)"}`, disabled: laterRepairs === 0 })}
           {Toggle({ k: "includeTechnical", label: "Technical details for a technician", hint: "Evidence, measured facts and detail tables for every check" })}
         </div>
 

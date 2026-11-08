@@ -296,3 +296,99 @@ pub enum ScanEvent {
     CheckStarted { id: String },
     CheckFinished { id: String, status: Status, summary: String, elapsed_ms: u64 },
 }
+
+// ───────────────────────────── Fixes ─────────────────────────────
+
+/// A repair DxTool can run. Shown on the Fixes page.
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FixInfo {
+    pub id: &'static str,
+    pub title: &'static str,
+    pub group: &'static str,
+    pub description: &'static str,
+    /// Exactly what it changes, shown before the user confirms.
+    pub changes: &'static str,
+    /// "low", "medium" or "high".
+    pub risk: &'static str,
+    pub needs_admin: bool,
+    pub may_need_restart: bool,
+    pub duration: &'static str,
+}
+
+/// One fix the user picked, with its options (for example which drive to check).
+#[derive(Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct FixRequest {
+    pub id: String,
+    #[serde(default)]
+    pub options: serde_json::Value,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct FixStepResult {
+    pub id: String,
+    pub title: String,
+    /// "ok", "warning", "failed" or "skipped".
+    pub status: String,
+    pub summary: String,
+    pub details: Vec<String>,
+    /// Last lines of the tool's output, for a technician.
+    pub output_tail: Vec<String>,
+    pub needs_restart: bool,
+    pub elapsed_ms: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct FixRun {
+    pub id: String,
+    pub machine_id: String,
+    pub computer_name: String,
+    pub started_at: String,
+    pub elapsed_ms: u64,
+    pub is_admin: bool,
+    /// The restore point step (always first unless the user chose to skip it).
+    pub restore_point: Option<FixStepResult>,
+    pub restore_point_skipped: bool,
+    pub steps: Vec<FixStepResult>,
+    pub needs_restart: bool,
+    pub app_version: String,
+}
+
+/// Live progress while fixes run.
+#[derive(Serialize, Clone, Debug)]
+#[serde(rename_all = "camelCase", tag = "type")]
+pub enum FixEvent {
+    StepStarted { id: String, title: String },
+    Output { id: String, line: String },
+    Progress { id: String, percent: f64 },
+    StepFinished { result: FixStepResult },
+}
+
+/// A driver update offered by Windows Update, matched to the installed driver.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
+pub struct DriverUpdate {
+    pub update_id: String,
+    pub title: String,
+    pub manufacturer: String,
+    pub driver_class: String,
+    pub hardware_id: String,
+    pub new_version: String,
+    pub new_date: String,
+    pub size_bytes: u64,
+    pub device_name: String,
+    pub installed_version: String,
+    pub installed_date: String,
+    /// Plain-English caution, e.g. when the offered driver is older than the installed one.
+    pub warning: String,
+}
+
+impl DriverUpdate {
+    /// BIOS/UEFI firmware updates carry more risk than ordinary drivers.
+    pub fn is_firmware(&self) -> bool {
+        self.driver_class.eq_ignore_ascii_case("Firmware")
+    }
+}

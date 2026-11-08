@@ -43,6 +43,7 @@ export function Health({
   onRun,
   currentMachineId,
   onReport,
+  onFix,
 }: {
   report: ScanReport | null;
   scan: ScanState | null;
@@ -51,6 +52,7 @@ export function Health({
   onRun: (kind: ScanKind, checks?: string[]) => void;
   currentMachineId: string | null;
   onReport: () => void;
+  onFix: (fixId: string) => void;
 }) {
   const findings = useMemo(() => (report ? collectFindings(report.results) : []), [report]);
   const groups = useMemo(() => {
@@ -135,7 +137,7 @@ export function Health({
           <h2>Findings</h2>
           <span className="muted small">Most serious first. Click one to see what it means and what to do.</span>
         </div>
-        <FindingList findings={findings} emptyText="No problems found. Everything checked looks healthy." />
+        <FindingList onFix={onFix} findings={findings} emptyText="No problems found. Everything checked looks healthy." />
       </section>
 
       <section className="card">

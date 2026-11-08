@@ -12,6 +12,8 @@ pub mod devices;
 #[cfg(windows)]
 pub mod events;
 #[cfg(windows)]
+pub mod fixes;
+#[cfg(windows)]
 pub mod health;
 #[cfg(windows)]
 pub mod history;
