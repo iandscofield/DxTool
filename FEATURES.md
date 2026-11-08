@@ -123,6 +123,7 @@ Click any item to open a side panel with everything about it: summary, connectio
 
 ## Other ✅
 - Dark and light themes, or follow Windows.
+- **Color themes:** blue, purple, red, green, or orange & black (pure black in dark mode). Pick one in Settings.
 - **Settings are saved in the DxTool-Data folder**, so they travel with DxTool on a USB stick.
 - Banner when DxTool isn't running as administrator, with a one-click **Restart as administrator** button.
 - Works fully offline.
@@ -141,9 +142,20 @@ Click any item to open a side panel with everything about it: summary, connectio
 - Second-opinion scan with ClamAV and downloadable threat databases.
 - Connect DxTool to Claude (MCP) so Claude can run checks and explain results.
 
+### Driver updates (Stage 5, from Extra Features 1)
+- For every device, show the installed driver version next to the newest version available. The newest version comes from Windows Update and, for graphics cards, from NVIDIA, AMD or Intel. Checked online only when you click.
+
 ### Distribution
 - Portable single program (no install needed), plus optional installer.
 - Automatic updates from GitHub releases.
+
+## Extra Features 1 🔜 (after version 1)
+From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click.
+- **Part prices:** find the current retail price of the parts in this PC.
+- **Upgrade recommendations:** for example "2 empty memory slots, adding 16 GB would help", "replace the hard drive with an SSD", or "this PC can't run Windows 11 because…".
+- **Game check:** compare a game's minimum and recommended requirements with this PC's hardware, including games already installed through Steam.
+- **Phone diagnostics:** check a connected phone (battery health, storage and so on).
+- **Phone backups:** back up photos and text messages from a phone to the PC.
 
 ## Later 💭
 - Bootable USB version: rescue files, find out why Windows won't start, fix boot problems, offline virus scan and removal.

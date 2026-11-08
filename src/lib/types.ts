@@ -53,6 +53,7 @@ export interface AppInfo {
 
 export type Mode = "simple" | "advanced";
 export type ThemePref = "system" | "dark" | "light";
+export type Accent = "blue" | "purple" | "red" | "green" | "orange";
 export type Page =
   | "overview"
   | "hardware"

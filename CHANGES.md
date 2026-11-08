@@ -4,6 +4,22 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.3.1 · Color themes · 2026-11-07
+
+### New
+- **Color themes** in Settings → Appearance: blue (the original), purple, red, green, and orange & black. Orange & black also turns dark mode pure black. Each theme works in both light and dark mode, and DxTool remembers your choice.
+
+### Planned
+- **Extra Features 1 added to the plan** (from the requirements document), to be built after version 1. Online lookups only happen when you click.
+  - **Driver versions:** the installed driver next to the newest available. This joins Stage 5's driver updates.
+  - **Part prices.**
+  - **Upgrade recommendations.**
+  - **Game requirement checks.**
+  - **Phone diagnostics.**
+  - **Phone photo and text backups.**
+
+---
+
 ## Version 0.3.0 · Stage 4: history and reports · 2026-11-07
 
 ### New

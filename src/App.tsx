@@ -11,7 +11,7 @@ import { History } from "./pages/History";
 import { Reports } from "./pages/Reports";
 import { Settings } from "./pages/Settings";
 import { api, loadPref, savePref } from "./lib/api";
-import type { AppInfo, AppSettings, CheckInfo, Inventory, MachineRecord, Mode, Page, ScanEvent, ScanKind, ScanReport, ScanState, ThemePref } from "./lib/types";
+import type { Accent, AppInfo, AppSettings, CheckInfo, Inventory, MachineRecord, Mode, Page, ScanEvent, ScanKind, ScanReport, ScanState, ThemePref } from "./lib/types";
 import { defaultBranding } from "./lib/types";
 
 function applyScanEvent(s: ScanState, e: ScanEvent): ScanState {
@@ -24,6 +24,7 @@ export default function App() {
   const [page, setPage] = useState<Page>("overview");
   const [mode, setMode] = useState<Mode>(loadPref("mode", "simple"));
   const [theme, setTheme] = useState<ThemePref>(loadPref("theme", "system"));
+  const [accent, setAccent] = useState<Accent>(loadPref("accent", "blue"));
   const [info, setInfo] = useState<AppInfo | null>(null);
   const [inventory, setInventory] = useState<Inventory | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +96,11 @@ export default function App() {
 
   useEffect(() => savePref("mode", mode), [mode]);
   useEffect(() => {
+    savePref("accent", accent);
+    if (accent === "blue") document.documentElement.removeAttribute("data-accent");
+    else document.documentElement.setAttribute("data-accent", accent);
+  }, [accent]);
+  useEffect(() => {
     savePref("theme", theme);
     if (theme === "system") document.documentElement.removeAttribute("data-theme");
     else document.documentElement.setAttribute("data-theme", theme);
@@ -140,6 +146,8 @@ export default function App() {
       <Settings
         theme={theme}
         setTheme={setTheme}
+        accent={accent}
+        setAccent={setAccent}
         mode={mode}
         setMode={setMode}
         info={info}

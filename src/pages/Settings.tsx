@@ -1,10 +1,12 @@
 import { Monitor, Moon, Sun } from "lucide-react";
-import type { AppInfo, Branding, Mode, ThemePref } from "../lib/types";
+import type { Accent, AppInfo, Branding, Mode, ThemePref } from "../lib/types";
 import { BrandingSettings } from "../components/BrandingSettings";
 
 export function Settings({
   theme,
   setTheme,
+  accent,
+  setAccent,
   mode,
   setMode,
   info,
@@ -14,6 +16,8 @@ export function Settings({
 }: {
   theme: ThemePref;
   setTheme: (t: ThemePref) => void;
+  accent: Accent;
+  setAccent: (a: Accent) => void;
   mode: Mode;
   setMode: (m: Mode) => void;
   info: AppInfo | null;
@@ -42,6 +46,28 @@ export function Settings({
             ).map(([v, l, I]) => (
               <button key={v} className={theme === v ? "on" : ""} onClick={() => setTheme(v)}>
                 <I size={14} /> {l}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="setting-row">
+          <div>
+            <div className="setting-name">Color theme</div>
+            <div className="muted small">The highlight color used for buttons, links and charts. Orange &amp; black also makes dark mode pure black.</div>
+          </div>
+          <div className="swatches" role="radiogroup" aria-label="Color theme">
+            {(
+              [
+                ["blue", "Blue", "linear-gradient(135deg, #3b82f6, #8b5cf6)"],
+                ["purple", "Purple", "linear-gradient(135deg, #7c3aed, #d946ef)"],
+                ["red", "Red", "linear-gradient(135deg, #dc2626, #f97316)"],
+                ["green", "Green", "linear-gradient(135deg, #16a34a, #0d9488)"],
+                ["orange", "Orange & black", "linear-gradient(135deg, #ea580c 0%, #f59e0b 50%, #000 50%)"],
+              ] as const
+            ).map(([v, label, bg]) => (
+              <button key={v} className={`swatch ${accent === v ? "on" : ""}`} onClick={() => setAccent(v)} role="radio" aria-checked={accent === v} title={label}>
+                <span className="swatch-dot" style={{ background: bg }} />
+                {label}
               </button>
             ))}
           </div>
