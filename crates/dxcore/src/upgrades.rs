@@ -110,12 +110,7 @@ pub fn intel_core_gen(name: &str) -> Option<u32> {
     let n = name.to_lowercase();
     let i = ["i3-", "i5-", "i7-", "i9-"].iter().find_map(|k| n.find(k).map(|i| i + 3))?;
     let d: String = n[i..].chars().take_while(|c| c.is_ascii_digit()).collect();
-    match d.len() {
-        4 => d[..1].parse().ok(),
-        5 => d[..2].parse().ok(),
-        3 => Some(1), // first generation: i5-750
-        _ => None,
-    }
+    crate::games::perf::intel_gen_from_model(&d)
 }
 
 /// Whether the processor is on Microsoft's Windows 11 list (rule of thumb: Intel 8th gen
@@ -579,6 +574,8 @@ mod tests {
         assert_eq!(win11_cpu("AMD Ryzen 5 1600 Six-Core Processor"), Win11Cpu::Unsupported);
         assert_eq!(win11_cpu("Intel(R) Celeron(R) N4020 CPU"), Win11Cpu::Unknown);
         assert_eq!(intel_core_gen("Intel(R) Core(TM) i5-10400"), Some(10));
+        assert_eq!(intel_core_gen("Intel(R) Core(TM) i5-1135G7 @ 2.40GHz"), Some(11));
+        assert_eq!(win11_cpu("Intel(R) Core(TM) i7-1065G7"), Win11Cpu::Supported);
         assert_eq!(intel_core_gen("Intel(R) Core(TM) i7 CPU 920"), None);
     }
 }

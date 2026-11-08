@@ -4,6 +4,32 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.8.0 · Extra Features 1: Game check · 2026-11-08
+
+### New
+- **Games page** (Sidebar → Tools → Games).
+  - Lists games installed through Steam and the Epic Games Launcher.
+  - Checks any Steam game against this PC's processor, graphics card, memory, free space and Windows version.
+  - Each result is **Runs well**, **Low settings**, **Too slow** or **Can't tell**, with a part-by-part table and the Steam store link.
+- **Check all** for every unchecked installed game.
+- **Results are saved**, so games can be looked at again offline. Only searching and first checks use the internet.
+- **Claude** can list installed games and check whether a game will run.
+- **Upgrades page:** laptop processors from the 10th generation on (for example i5-1135G7) were mistaken for 1st-generation chips in the Windows 11 check. Fixed.
+
+### Tested
+- **This PC:** found all 170 installed games (168 from Steam, 2 from Epic) and left out tools and runtimes.
+- **70 of them checked against Steam,** including GTA V, Cyberpunk 2077, Battlefield 6, Baldur's Gate 3 and Helldivers 2. All run well on this PC, as expected. The only "Can't tell" results are games whose requirements say nothing useful ("N/A").
+  - The audit found and fixed games that list only minimum requirements: a powerful PC was being rated "Low settings".
+  - It also added readings for vague requirements ("Intel Core i5 3rd gen", "2 GB dedicated memory", "Integrated graphics") and odd spellings ("RTX2060", "R5700").
+- **The made-up old laptop** (6th-gen i5 laptop chip, Intel HD 520, 4 GB):
+  - GTA V: low settings;
+  - Among Us: low settings;
+  - Cyberpunk 2077 and Baldur's Gate 3: too slow, on processor, graphics and memory.
+- **Automatic tests** for reading Steam's requirement pages and the processor and graphics names.
+- **The Games page** in the preview browser, and Claude's game tools on the real program.
+
+---
+
 ## Version 0.7.0 · Extra Features 1: Upgrade recommendations · 2026-11-08
 
 ### New

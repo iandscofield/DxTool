@@ -1,5 +1,5 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
-import type { UpgradeReport, UpdateInfo, AvEngine, AvEvent, AvKind, AvStatus, ClaudeStatus, QuarantineItem, Threat, VirusScan, AppInfo, AppSettings, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
+import type { GameCheck, InstalledGame, SearchHit, UpgradeReport, UpdateInfo, AvEngine, AvEvent, AvKind, AvStatus, ClaudeStatus, QuarantineItem, Threat, VirusScan, AppInfo, AppSettings, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
 import { defaultBranding } from "./types";
 
 /** True inside the DxTool window; false when the UI is opened in a normal browser during development. */
@@ -134,6 +134,50 @@ export const api = {
           exe: "C:\\Tools\\DxTool\\DxTool.exe",
           claudeCodeCommand: 'claude mcp add --scope user dxtool -- "C:\\Tools\\DxTool\\DxTool.exe" --mcp',
         }),
+  gamesInstalled: (): Promise<InstalledGame[]> =>
+    inTauri
+      ? invoke<InstalledGame[]>("games_installed")
+      : Promise.resolve([
+          { id: "1091500", name: "Cyberpunk 2077", launcher: "Steam", steamAppId: 1091500, sizeBytes: 66.8e9, folder: "", lastVerdict: "recommended" },
+          { id: "271590", name: "Grand Theft Auto V Legacy", launcher: "Steam", steamAppId: 271590, sizeBytes: 129e9, folder: "", lastVerdict: null },
+          { id: "Fortnite", name: "Fortnite", launcher: "Epic", steamAppId: null, sizeBytes: 37.6e9, folder: "", lastVerdict: null },
+        ]),
+  gameCheck: (appId: number, refresh: boolean): Promise<GameCheck> =>
+    inTauri
+      ? invoke<GameCheck>("game_check", { appId, refresh })
+      : new Promise((r) =>
+          setTimeout(
+            () =>
+              r({
+                appId,
+                name: appId === 271590 ? "Grand Theft Auto V Legacy" : "Cyberpunk 2077",
+                image: "",
+                storeUrl: `https://store.steampowered.com/app/${appId}/`,
+                overall: appId === 271590 ? "minimum" : "recommended",
+                summary: appId === 271590 ? "Meets the minimum but not the recommended requirements for the graphics: expect to use low or medium settings." : "Meets the recommended requirements: expect it to run well, usually on high settings.",
+                parts: [
+                  { part: "Processor", yours: "13th Gen Intel Core i7-13700F", minimum: "Core i7-6700 or Ryzen 5 1600", recommended: "Core i7-12700 or Ryzen 7 7800X3D", verdict: "recommended", note: "" },
+                  { part: "Graphics", yours: "NVIDIA GeForce RTX 4070 Ti", minimum: "GeForce GTX 1060 6GB or Radeon RX 580 8GB", recommended: "GeForce RTX 2060 SUPER or Radeon RX 5700 XT", verdict: appId === 271590 ? "minimum" : "recommended", note: "" },
+                  { part: "Memory", yours: "64 GB", minimum: "12 GB RAM", recommended: "16 GB RAM", verdict: "recommended", note: "" },
+                  { part: "Storage", yours: "Installed", minimum: "70 GB available space", recommended: "70 GB available space", verdict: "recommended", note: "Already installed." },
+                  { part: "Windows", yours: "Windows 11 Pro", minimum: "64-bit Windows 10", recommended: "64-bit Windows 10", verdict: "recommended", note: "" },
+                ],
+                minimumText: "",
+                recommendedText: "",
+                fetchedAt: new Date().toISOString(),
+                installed: true,
+              }),
+            500,
+          ),
+        ),
+  gameSearch: (term: string): Promise<SearchHit[]> =>
+    inTauri
+      ? invoke<SearchHit[]>("game_search", { term })
+      : Promise.resolve([
+          { appId: 1086940, name: "Baldur's Gate 3", image: "" },
+          { appId: 1091500, name: `${term} (preview result)`, image: "" },
+        ]),
+  gameFind: (name: string): Promise<SearchHit | null> => (inTauri ? invoke<SearchHit | null>("game_find", { name }) : Promise.resolve(null)),
   upgradeAdvice: (refresh: boolean): Promise<UpgradeReport> =>
     inTauri
       ? invoke<UpgradeReport>("upgrade_advice", { refresh })

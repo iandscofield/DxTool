@@ -167,6 +167,7 @@ Connect DxTool to Claude so you can ask things like "why does my PC keep crashin
   - search the Windows event logs;
   - check antivirus status and virus scan results;
   - get upgrade recommendations;
+  - list installed games and check whether a game will run;
   - see which DxTool fixes exist and which have already been run.
 - **Claude can't run repairs or delete files.** It recommends DxTool's fixes by name, and you run them in DxTool, which makes a restore point first.
 - Needs Claude Desktop or Claude Code and a Claude account. DxTool itself sends nothing anywhere: Claude asks, and DxTool answers on your PC.
@@ -214,6 +215,28 @@ A page of upgrade advice for this PC, worked out from its hardware on the PC its
 - Laptops get laptop advice (SO-DIMM memory, check for soldered memory, no graphics card upgrades).
 - **Claude** can ask for the same advice.
 
+## Games ✅
+Will a game run on this PC? (Sidebar → Tools → Games.)
+- **Installed games** from **Steam** and the **Epic Games Launcher** are listed automatically, with their size. Tools, runtimes and add-ons are left out.
+- **Check any game** sold on Steam by name, installed or not.
+- Each check compares the game's **minimum** and **recommended** requirements, read from Steam's store, with this PC:
+  - **processor** and **graphics card**, using a built-in table of rough benchmark scores (from 2008-era chips to the newest);
+  - **memory** and **free space**, exactly;
+  - the **Windows** version.
+- The result is one of:
+  - **Runs well**: meets the recommended requirements;
+  - **Low settings**: meets the minimum only;
+  - **Too slow**: below the minimum;
+  - **Can't tell**: shown with a reason when a requirement is too vague, such as "N/A" or "X64 architecture".
+- Reads requirements the way publishers really write them:
+  - "i5-4460 or FX-6300" means either one is enough;
+  - vague ones like "Intel Core i5 3rd gen", "Ryzen 5", "2 GB dedicated memory" or "Integrated graphics";
+  - spellings like "RTX2060" and "RX 6700-XT".
+- **Check all** goes through every unchecked installed game, gently, one about every second.
+- Results and requirements are saved, so a game checked once can be looked at again offline. Only searching and first-time checks go online.
+- Epic games are matched to their Steam page by name. Games not sold on Steam (such as Fortnite) can't be checked, and DxTool says so.
+- **Claude** can list installed games and check any game too.
+
 ## Getting DxTool ✅
 Download from the **Releases** page on GitHub (github.com/iandscofield/DxTool/releases). Two choices, same program:
 - **DxTool.exe (portable):** no installing. Put it in any folder or on a USB stick and double-click it. Its saved scans, reports and settings live in a `DxTool-Data` folder right next to it, so the whole thing can be carried from PC to PC.
@@ -233,10 +256,9 @@ Download from the **Releases** page on GitHub (github.com/iandscofield/DxTool/re
 - If Claude is using DxTool during an update, Claude's connection drops until you restart Claude Desktop.
 
 ## Extra Features 1 🔜 (in progress)
-From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click.
+From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click. Done so far: color themes, upgrade recommendations, game check.
 - **Newest graphics drivers straight from NVIDIA, AMD and Intel** (Windows Update is already used).
 - **Part prices:** find the current retail price of the parts in this PC.
-- **Game check:** compare a game's minimum and recommended requirements with this PC's hardware, including games already installed through Steam.
 - **Phone diagnostics:** check a connected phone (battery health, storage and so on).
 - **Phone backups:** back up photos and text messages from a phone to the PC.
 

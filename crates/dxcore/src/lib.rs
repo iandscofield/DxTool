@@ -16,6 +16,8 @@ pub mod events;
 #[cfg(windows)]
 pub mod fixes;
 #[cfg(windows)]
+pub mod games;
+#[cfg(windows)]
 pub mod health;
 #[cfg(windows)]
 pub mod history;

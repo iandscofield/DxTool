@@ -2,6 +2,7 @@ import {
   Bug,
   Cpu,
   FileText,
+  Gamepad2,
   HeartPulse,
   History,
   LayoutDashboard,
@@ -31,6 +32,7 @@ const main: NavItem[] = [
 ];
 const tools: NavItem[] = [
   { id: "upgrades", label: "Upgrades", icon: Rocket },
+  { id: "games", label: "Games", icon: Gamepad2 },
   { id: "history", label: "History", icon: History },
   { id: "reports", label: "Reports", icon: FileText },
   { id: "fixes", label: "Fixes", icon: Wrench },

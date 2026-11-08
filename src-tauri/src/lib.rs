@@ -314,6 +314,32 @@ async fn upgrade_advice(refresh: bool) -> Result<dxcore::model::UpgradeReport, S
     .await
 }
 
+// ───────────────────────── Game check ─────────────────────────
+
+/// Games installed through Steam and Epic (offline).
+#[tauri::command]
+async fn games_installed() -> Result<Vec<dxcore::games::InstalledGame>, String> {
+    blocking(dxcore::games::installed).await
+}
+
+/// Checks a Steam game against this PC (asks Steam the first time, or when `refresh` is set).
+#[tauri::command]
+async fn game_check(app_id: u32, refresh: bool) -> Result<dxcore::games::GameCheck, String> {
+    blocking(move || dxcore::games::check(app_id, refresh)).await?
+}
+
+/// Searches Steam's store by name.
+#[tauri::command]
+async fn game_search(term: String) -> Result<Vec<dxcore::games::SearchHit>, String> {
+    blocking(move || dxcore::games::search(&term)).await?
+}
+
+/// Finds the Steam store entry for a game installed elsewhere (e.g. Epic).
+#[tauri::command]
+async fn game_find(name: String) -> Result<Option<dxcore::games::SearchHit>, String> {
+    blocking(move || dxcore::games::find_app(&name)).await?
+}
+
 // ───────────────────────── Updates ─────────────────────────
 
 #[tauri::command]
@@ -403,6 +429,10 @@ pub fn run() {
             claude_setup,
             mcp_try_tool,
             upgrade_advice,
+            games_installed,
+            game_check,
+            game_search,
+            game_find,
             install_kind,
             update_check,
             update_install

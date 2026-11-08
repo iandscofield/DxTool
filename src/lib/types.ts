@@ -55,6 +55,7 @@ export type Mode = "simple" | "advanced";
 export type ThemePref = "system" | "dark" | "light";
 export type Accent = "blue" | "purple" | "red" | "green" | "orange";
 export type Page =
+  | "games"
   | "upgrades"
   | "overview"
   | "hardware"
@@ -436,4 +437,45 @@ export interface UpgradeReport {
   items: Upgrade[];
   good: string[];
   limited?: string | null;
+}
+
+export type GameVerdict = "recommended" | "minimum" | "below" | "unknown";
+
+export interface InstalledGame {
+  id: string;
+  name: string;
+  launcher: "Steam" | "Epic";
+  steamAppId?: number | null;
+  sizeBytes: number;
+  folder: string;
+  lastVerdict?: GameVerdict | null;
+}
+
+export interface PartCheck {
+  part: string;
+  yours: string;
+  minimum: string;
+  recommended: string;
+  verdict: GameVerdict;
+  note: string;
+}
+
+export interface GameCheck {
+  appId: number;
+  name: string;
+  image: string;
+  storeUrl: string;
+  overall: GameVerdict;
+  summary: string;
+  parts: PartCheck[];
+  minimumText: string;
+  recommendedText: string;
+  fetchedAt: string;
+  installed: boolean;
+}
+
+export interface SearchHit {
+  appId: number;
+  name: string;
+  image: string;
 }

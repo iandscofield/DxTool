@@ -15,7 +15,7 @@ const PROTOCOLS: &[&str] = &["2025-06-18", "2025-03-26", "2024-11-05"];
 const INSTRUCTIONS: &str = "DxTool is a Windows diagnostic tool running on the user's PC. \
 Start with get_pc_overview. Run run_health_scan (fast takes seconds, full under a minute) to check drives, crashes, \
 Windows Update, drivers, security and more; findings come with plain-English advice. Use get_hardware_inventory for \
-detailed specs, get_upgrade_recommendations for what to upgrade or whether Windows 11 is possible, and query_event_log to dig into crashes and errors. DxTool's repairs (SFC, DISM, chkdsk, driver updates, \
+detailed specs, get_upgrade_recommendations for what to upgrade or whether Windows 11 is possible, check_game to see whether a game will run, and query_event_log to dig into crashes and errors. DxTool's repairs (SFC, DISM, chkdsk, driver updates, \
 etc.) and virus removal are run by the user inside the DxTool app, which creates a restore point first: recommend them \
 by name rather than giving manual commands when a DxTool fix exists. Explain things simply; the user may not be technical.";
 
@@ -70,6 +70,22 @@ fn tools() -> Value {
             "name": "get_upgrade_recommendations",
             "description": "DxTool's upgrade advice for this PC, worked out from its hardware: memory (amount, empty slots, XMP/EXPO switched off), moving Windows to an SSD, failing or full drives, Windows 11 readiness, worn laptop batteries, graphics and processor age. Each item has a priority, rough cost, why and how. Also lists what is already fine.",
             "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+            "name": "list_installed_games",
+            "description": "Games installed on this PC through Steam and the Epic Games Launcher, with size and the result of the last DxTool game check if there was one.",
+            "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+            "name": "check_game",
+            "description": "Compares a game's minimum and recommended PC requirements (from Steam's store) with this PC's processor, graphics, memory, free space and Windows version. Works for any game sold on Steam, installed or not. Needs the internet the first time a game is checked.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "game": { "type": "string", "description": "Game name (e.g. 'Cyberpunk 2077') or Steam app id." }
+                },
+                "required": ["game"]
+            }
         },
         {
             "name": "get_hardware_inventory",
@@ -200,6 +216,11 @@ pub fn call_tool(name: &str, a: &Value) -> Result<String, String> {
         }
         "get_saved_scan" => load_scan(arg_str(a, "machine_id").ok_or("machine_id is required")?, arg_str(a, "scan_id").ok_or("scan_id is required")?, arg_bool(a, "include_details")),
         "list_machines" => Ok(machines_text()),
+        "list_installed_games" => Ok(games_text()),
+        "check_game" => {
+            let g = arg_str(a, "game").ok_or("Missing 'game'.")?;
+            crate::games::check_by_name(g).map(|c| game_check_text(&c))
+        }
         "get_upgrade_recommendations" => Ok(upgrades_text(&crate::upgrades::for_this_pc())),
         "get_hardware_inventory" => {
             let inv = crate::upgrades::inventory();
@@ -634,5 +655,36 @@ fn upgrades_text(r: &crate::model::UpgradeReport) -> String {
     if let Some(l) = &r.limited {
         out.push_str(&format!("\nNote: {l}\n"));
     }
+    out
+}
+
+fn games_text() -> String {
+    let games = crate::games::installed();
+    if games.is_empty() {
+        return "No Steam or Epic Games Launcher games found on this PC.".into();
+    }
+    let mut out = format!("{} installed games:\n", games.len());
+    for g in games {
+        out.push_str(&format!(
+            "- {} ({}, {:.1} GB){}{}\n",
+            g.name,
+            g.launcher,
+            g.size_bytes as f64 / 1e9,
+            g.steam_app_id.map(|id| format!(", Steam app {id}")).unwrap_or_default(),
+            g.last_verdict.map(|v| format!(", last check: {v}")).unwrap_or_default()
+        ));
+    }
+    out
+}
+
+fn game_check_text(c: &crate::games::GameCheck) -> String {
+    let mut out = format!("{} (Steam app {}): {}\n{}\n", c.name, c.app_id, c.overall, c.summary);
+    for p in &c.parts {
+        out.push_str(&format!("\n{} [{}]\n  This PC: {}\n  Minimum: {}\n  Recommended: {}\n", p.part, p.verdict, p.yours, p.minimum, p.recommended));
+        if !p.note.is_empty() {
+            out.push_str(&format!("  Note: {}\n", p.note));
+        }
+    }
+    out.push_str("\nProcessor and graphics comparisons use rough benchmark scores; memory and storage are exact.\n");
     out
 }

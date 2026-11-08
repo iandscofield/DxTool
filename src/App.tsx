@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, RefreshCw, ShieldAlert, Moon, Sun } from "lucide-react";
 import { Sidebar } from "./components/Sidebar";
 import { Upgrades } from "./pages/Upgrades";
+import { Games } from "./pages/Games";
 import { Overview } from "./pages/Overview";
 import { Hardware } from "./pages/Hardware";
 import { Placeholder } from "./pages/Placeholder";
@@ -231,6 +232,8 @@ export default function App() {
         update={update}
       />
     );
+  } else if (page === "games") {
+    content = <Games />;
   } else if (page === "upgrades") {
     content = <Upgrades />;
   } else if (page === "history") {
