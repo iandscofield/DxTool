@@ -556,6 +556,16 @@ pub fn claude_status() -> Value {
     })
 }
 
+/// Removes DxTool from Claude Desktop only if it points to this copy. Used by the uninstaller,
+/// so uninstalling doesn't break a connection made by another (e.g. portable) copy.
+pub fn claude_remove_if_mine() -> Result<String, String> {
+    if claude_status().get("state").and_then(Value::as_str) == Some("set_up") {
+        claude_setup(true)
+    } else {
+        Ok("Claude Desktop isn't connected to this copy of DxTool.".into())
+    }
+}
+
 /// Adds (or updates) DxTool in Claude Desktop's settings. A backup is kept.
 pub fn claude_setup(remove: bool) -> Result<String, String> {
     let configs = claude_desktop_configs();

@@ -198,13 +198,25 @@ Click any item to open a side panel with everything about it: summary, connectio
 
 ---
 
-## Coming in version 1 🔜
+## Getting DxTool ✅
+Download from the **Releases** page on GitHub (github.com/iandscofield/DxTool/releases). Two choices, same program:
+- **DxTool.exe (portable):** no installing. Put it in any folder or on a USB stick and double-click it. Its saved scans, reports and settings live in a `DxTool-Data` folder right next to it, so the whole thing can be carried from PC to PC.
+- **DxTool setup (installer):** installs DxTool for your Windows account (no administrator password needed), with a Start menu shortcut and an entry in Settings → Apps for uninstalling.
+  - If Claude Desktop is installed, the installer asks whether to **connect DxTool to Claude** straight away.
+  - Uninstalling also disconnects Claude (only if it was connected to that copy). Tick "Delete the application data" to also remove saved scans, reports and ClamAV.
+- Windows may warn that the file comes from an "unknown publisher", because DxTool isn't code-signed yet: choose **More info → Run anyway**.
 
-### Distribution
-- Portable single program (no install needed), plus optional installer that can also connect Claude during setup.
-- Automatic updates from GitHub releases.
+## Updates ✅
+**Settings → Updates**.
+- **Check for updates** looks at DxTool's GitHub releases and shows what's new in plain English.
+- **Download and install:** DxTool downloads the new version, checks it against the release's checksum file so a damaged or altered download is never installed, then closes and reopens as the new version.
+  - **Portable copy:** the program file is swapped in its folder. The old copy is cleaned up the next time DxTool starts.
+  - **Installed copy:** the installer runs quietly in the background.
+  - Saved scans, reports and settings are always kept.
+- **Check when DxTool starts** (off unless you turn it on): shows a note at the top of the window when a new version is out. DxTool only goes online when you check, or with this setting on.
+- If Claude is using DxTool during an update, Claude's connection drops until you restart Claude Desktop.
 
-## Extra Features 1 🔜 (after version 1)
+## Extra Features 1 🔜 (next)
 From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click.
 - **Newest graphics drivers straight from NVIDIA, AMD and Intel** (Windows Update is already used).
 - **Part prices:** find the current retail price of the parts in this PC.

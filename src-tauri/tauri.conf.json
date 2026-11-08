@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "DxTool",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "identifier": "com.iandscofield.dxtool",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -34,6 +34,16 @@
       "icons/icon.ico"
     ],
     "shortDescription": "Diagnostic and repair tool for Windows PCs",
-    "category": "Utility"
+    "category": "Utility",
+    "publisher": "iandscofield",
+    "copyright": "Copyright (c) 2026 iandscofield. MIT licence.",
+    "homepage": "https://github.com/iandscofield/DxTool",
+    "licenseFile": "../LICENSE",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerHooks": "installer-hooks.nsh"
+      }
+    }
   }
 }

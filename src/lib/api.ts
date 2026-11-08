@@ -1,5 +1,5 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
-import type { AvEngine, AvEvent, AvKind, AvStatus, ClaudeStatus, QuarantineItem, Threat, VirusScan, AppInfo, AppSettings, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
+import type { UpdateInfo, AvEngine, AvEvent, AvKind, AvStatus, ClaudeStatus, QuarantineItem, Threat, VirusScan, AppInfo, AppSettings, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
 import { defaultBranding } from "./types";
 
 /** True inside the DxTool window; false when the UI is opened in a normal browser during development. */
@@ -134,6 +134,45 @@ export const api = {
           exe: "C:\\Tools\\DxTool\\DxTool.exe",
           claudeCodeCommand: 'claude mcp add --scope user dxtool -- "C:\\Tools\\DxTool\\DxTool.exe" --mcp',
         }),
+  installKind: () => (inTauri ? invoke<string>("install_kind") : Promise.resolve("portable")),
+  updateCheck: (): Promise<UpdateInfo> =>
+    inTauri
+      ? invoke<UpdateInfo>("update_check")
+      : new Promise((r) =>
+          setTimeout(
+            () =>
+              r({
+                current: "0.5.1",
+                latest: "0.6.0",
+                newer: true,
+                notes: ["### New", "- **Installer** that can also connect Claude Desktop.", "- **Updates** from GitHub, from Settings.", "", "### Fixed", "- Something small."].join("\n"),
+                published: "2026-11-08T12:00:00Z",
+                pageUrl: "https://github.com/iandscofield/DxTool/releases/tag/v0.6.0",
+                installKind: "portable",
+                downloadName: "DxTool.exe",
+                downloadSize: 6_600_000,
+              }),
+            600,
+          ),
+        ),
+  updateInstall: (onProgress: (p: { done: number; total: number }) => void): Promise<string> => {
+    if (!inTauri) {
+      return new Promise((resolve) => {
+        let done = 0;
+        const t = setInterval(() => {
+          done += 1_100_000;
+          onProgress({ done: Math.min(done, 6_600_000), total: 6_600_000 });
+          if (done >= 6_600_000) {
+            clearInterval(t);
+            resolve("DxTool 0.6.0 is installed and is starting now.");
+          }
+        }, 400);
+      });
+    }
+    const ch = new Channel<{ done: number; total: number }>();
+    ch.onmessage = onProgress;
+    return invoke<string>("update_install", { onProgress: ch });
+  },
   claudeSetup: (remove: boolean) =>
     inTauri
       ? invoke<string>("claude_setup", { remove })

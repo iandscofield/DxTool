@@ -178,6 +178,20 @@ export interface Branding {
 
 export interface AppSettings {
   branding: Branding;
+  /** Look for a new DxTool version each time it starts (off unless the user turns it on). */
+  checkUpdates?: boolean;
+}
+
+export interface UpdateInfo {
+  current: string;
+  latest: string;
+  newer: boolean;
+  notes: string;
+  published: string;
+  pageUrl: string;
+  installKind: "portable" | "installed";
+  downloadName: string;
+  downloadSize: number;
 }
 
 export const defaultBranding: Branding = {

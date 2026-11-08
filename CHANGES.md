@@ -4,6 +4,46 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.6.0 · Stage 7: Downloads, installer and updates · 2026-11-08
+
+This completes the version 1 plan.
+
+### New
+- **Releases on GitHub.** Each new version is built on GitHub's own computers and published on the project's Releases page, with:
+  - **DxTool.exe:** the portable version, no installing needed;
+  - **an installer** for people who prefer a Start menu shortcut and an uninstall entry;
+  - **a checksum file** DxTool uses to make sure an update downloaded correctly.
+- **The installer:**
+  - installs for your Windows account, with no administrator password needed;
+  - asks whether to connect DxTool to Claude Desktop, if Claude Desktop is installed;
+  - on uninstall, also disconnects Claude, and can delete DxTool's saved data if you tick the box.
+- **Updates** in Settings → Updates.
+  - **Check for updates** shows the new version's notes.
+  - **Download and install** checks the download, then DxTool closes and reopens as the new version.
+  - Works for both the portable and the installed version, and keeps all your saved scans and settings.
+  - Optional **Check when DxTool starts** setting, off by default (DxTool stays offline unless you ask).
+- **The DxTool project on GitHub is now public**, as planned for a free, open-source tool.
+
+### Good to know
+- **Windows SmartScreen** may say "Windows protected your PC" the first time you run a downloaded copy, because DxTool isn't code-signed yet. Choose **More info → Run anyway**. Updates downloaded by DxTool itself don't trigger this.
+- **Updating while Claude Desktop is using DxTool** closes Claude's copy of DxTool. Restart Claude Desktop afterwards.
+
+### Tested
+- **The installer, on this PC, in a test folder:**
+  - a quiet install put the program, Start menu shortcut and Apps entry in place;
+  - an update over it kept the saved data;
+  - the uninstall removed everything except the data folder (deleting that is the checkbox's job);
+  - the test copy was then deleted.
+- **Portable update:** swapping the program file while an older copy was still running (the way Claude Desktop keeps it open); the new copy then started as 0.6.0.
+- **Update check:** gives a clear message when no release can be found. Version comparison and checksum reading have automatic tests.
+- **The new Settings card and the "new version available" note**, in the preview browser.
+
+### Not tested yet
+- **The Claude question in the installer:** Claude Desktop isn't installed on this PC. Try the installer on a PC that has it.
+- **A real update from one GitHub release to the next:** this needs two published releases. The first real test will be updating 0.6.0 to the next version.
+
+---
+
 ## Version 0.5.1 · ClamAV tested on a real PC · 2026-11-08
 
 ### Fixed

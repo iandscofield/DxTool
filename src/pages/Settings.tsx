@@ -1,7 +1,8 @@
 import { Monitor, Moon, Sun } from "lucide-react";
-import type { Accent, AppInfo, Branding, Mode, ThemePref } from "../lib/types";
+import type { Accent, AppInfo, Branding, Mode, ThemePref, UpdateInfo } from "../lib/types";
 import { BrandingSettings } from "../components/BrandingSettings";
 import { ClaudeSettings } from "../components/ClaudeSettings";
+import { UpdateSettings } from "../components/UpdateSettings";
 
 export function Settings({
   theme,
@@ -14,6 +15,9 @@ export function Settings({
   onElevate,
   branding,
   onBranding,
+  checkUpdates,
+  onCheckUpdates,
+  update,
 }: {
   theme: ThemePref;
   setTheme: (t: ThemePref) => void;
@@ -25,6 +29,9 @@ export function Settings({
   onElevate: () => void;
   branding: Branding;
   onBranding: (b: Branding) => void;
+  checkUpdates: boolean;
+  onCheckUpdates: (v: boolean) => void;
+  update: UpdateInfo | null;
 }) {
   return (
     <div className="page settings">
@@ -92,6 +99,8 @@ export function Settings({
       <BrandingSettings branding={branding} onChange={onBranding} />
 
       <ClaudeSettings />
+
+      <UpdateSettings version={info?.version ?? "—"} checkOnStart={checkUpdates} onCheckOnStart={onCheckUpdates} found={update} />
 
       <section className="card">
         <h2>About</h2>

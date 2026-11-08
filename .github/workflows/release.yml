@@ -1,0 +1,83 @@
+# Builds DxTool on GitHub's Windows machines and publishes a release when a version tag
+# (e.g. v0.6.0) is pushed. Release files:
+#   DxTool.exe                     portable program (no install needed)
+#   DxTool_<version>_x64-setup.exe installer
+#   SHA256SUMS.txt                 checksums DxTool's updater verifies before installing
+# Release notes come from that version's section in CHANGES.md.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ". -> target"
+
+      - name: Install packages
+        run: npm ci
+
+      - name: Check the version matches the tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          $v = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          if ("v$v" -ne "${{ github.ref_name }}") { throw "Tag ${{ github.ref_name }} doesn't match version $v in tauri.conf.json" }
+
+      - name: Test the engine
+        run: cargo test -p dxcore
+
+      - name: Build
+        run: npx tauri build
+
+      - name: Collect release files
+        id: files
+        shell: pwsh
+        run: |
+          $v = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          New-Item -ItemType Directory -Force out | Out-Null
+          Copy-Item target/release/dxtool.exe out/DxTool.exe
+          Copy-Item "target/release/bundle/nsis/DxTool_${v}_x64-setup.exe" out/
+          Push-Location out
+          Get-ChildItem -File | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.Name -Algorithm SHA256).Hash.ToLower(), $_.Name } | Set-Content -Encoding ascii SHA256SUMS.txt
+          Pop-Location
+          Get-Content out/SHA256SUMS.txt
+
+          # Release notes: this version's section of CHANGES.md (between its heading and the next ---).
+          $lines = Get-Content CHANGES.md -Encoding utf8
+          $start = ($lines | Select-String -Pattern "^## Version $([regex]::Escape($v))\b" | Select-Object -First 1).LineNumber
+          $notes = @()
+          if ($start) {
+            $title = $lines[$start - 1] -replace '^## ', ''
+            foreach ($l in $lines[$start..($lines.Count - 1)]) { if ($l -match '^---\s*$') { break }; $notes += $l }
+          } else { $title = "Version $v" }
+          $notes += ""
+          $notes += "**Which file?** DxTool.exe runs without installing (copy it anywhere, e.g. a USB stick). The setup file installs DxTool for your account with a Start menu shortcut and can connect Claude Desktop. Windows may warn that the file is from an unknown publisher: choose More info, then Run anyway."
+          $notes -join "`n" | Set-Content -Encoding utf8 notes.md
+          "title=$title" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+          "version=$v" | Out-File -Append -Encoding utf8 $env:GITHUB_OUTPUT
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $tag = "v${{ steps.files.outputs.version }}"
+          gh release create $tag (Get-ChildItem out -File).FullName --title "DxTool ${{ steps.files.outputs.title }}" --notes-file notes.md --verify-tag

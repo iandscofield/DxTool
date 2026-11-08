@@ -810,3 +810,19 @@ button.scan-card:hover { border-color: var(--border-strong); }
 .banner.ok { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: var(--radius-sm); margin-bottom: 8px; }
 .claude-msg { margin-top: 4px; }
 .claude-foot { margin-top: 10px; word-break: break-all; }
+
+/* ───────── Updates ───────── */
+.update-ok { display: flex; align-items: center; gap: 8px; color: var(--text-2); margin: 12px 0 0; }
+.update-ok svg { color: var(--ok); flex-shrink: 0; }
+.update-box { margin-top: 14px; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); }
+.update-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.update-box .progress-bar { margin: 8px 0 6px; }
+.release-notes { margin-top: 12px; max-height: 320px; overflow: auto; padding-top: 10px; border-top: 1px dashed var(--border); font-size: 13px; color: var(--text-2); }
+.release-notes h4 { margin: 12px 0 6px; font-size: 13px; color: var(--text); }
+.release-notes h4:first-child { margin-top: 0; }
+.release-notes ul { margin: 0 0 8px; padding-left: 20px; }
+.release-notes li { margin: 3px 0; }
+.release-notes p { margin: 6px 0; }
+.banner.update { background: linear-gradient(90deg, rgba(59, 130, 246, 0.12), transparent 70%); color: var(--text-2); border-bottom: 1px solid var(--border); }
+.banner.update svg { color: var(--accent); flex-shrink: 0; }
+.banner.update .btn:first-of-type { margin-left: auto; }

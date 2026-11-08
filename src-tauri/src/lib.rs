@@ -296,6 +296,41 @@ async fn mcp_try_tool(name: String) -> Result<String, String> {
     blocking(move || dxcore::mcp::call_tool(&name, &serde_json::json!({}))).await?
 }
 
+// ───────────────────────── Updates ─────────────────────────
+
+#[tauri::command]
+fn install_kind() -> &'static str {
+    dxcore::update::install_kind()
+}
+
+/// Looks up the newest DxTool release on GitHub (only when asked).
+#[tauri::command]
+async fn update_check() -> Result<dxcore::update::UpdateInfo, String> {
+    blocking(dxcore::update::check).await?
+}
+
+#[derive(Clone, serde::Serialize)]
+struct Progress {
+    done: u64,
+    total: u64,
+}
+
+/// Downloads and installs the newest version, then closes this window so the new one can take over.
+#[tauri::command]
+async fn update_install(app: tauri::AppHandle, on_progress: Channel<Progress>) -> Result<String, String> {
+    let msg = blocking(move || {
+        dxcore::update::install(&|done, total| {
+            let _ = on_progress.send(Progress { done, total });
+        })
+    })
+    .await??;
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(1500));
+        app.exit(0);
+    });
+    Ok(msg)
+}
+
 /// `DxTool.exe --mcp`: serve Claude over stdin/stdout instead of opening a window.
 pub fn run_mcp() {
     dxcore::mcp::serve(env!("CARGO_PKG_VERSION"));
@@ -348,8 +383,15 @@ pub fn run() {
             open_windows_security,
             claude_status,
             claude_setup,
-            mcp_try_tool
+            mcp_try_tool,
+            install_kind,
+            update_check,
+            update_install
         ])
+        .setup(|_| {
+            dxcore::update::cleanup();
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running DxTool");
 }

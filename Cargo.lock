@@ -692,12 +692,13 @@ checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
 
 [[package]]
 name = "dxcore"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "base64 0.22.1",
  "chrono",
  "serde",
  "serde_json",
+ "sha2",
  "windows",
  "winreg 0.55.0",
  "wmi",
@@ -705,7 +706,7 @@ dependencies = [
 
 [[package]]
 name = "dxtool"
-version = "0.5.1"
+version = "0.6.0"
 dependencies = [
  "dxcore",
  "serde",

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { RefreshCw, ShieldAlert, Moon, Sun } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Download, RefreshCw, ShieldAlert, Moon, Sun } from "lucide-react";
 import { Sidebar } from "./components/Sidebar";
 import { Overview } from "./pages/Overview";
 import { Hardware } from "./pages/Hardware";
@@ -14,7 +14,7 @@ import { Settings } from "./pages/Settings";
 import { Virus } from "./pages/Virus";
 import { useAvJob } from "./lib/useAvJob";
 import { api, loadPref, savePref } from "./lib/api";
-import type { Accent, AppInfo, AppSettings, CheckInfo, FixEvent, FixInfo, FixRequest, FixRun, FixState, Inventory, MachineRecord, Mode, Page, ScanEvent, ScanKind, ScanReport, ScanState, ThemePref } from "./lib/types";
+import type { UpdateInfo, Accent, AppInfo, AppSettings, CheckInfo, FixEvent, FixInfo, FixRequest, FixRun, FixState, Inventory, MachineRecord, Mode, Page, ScanEvent, ScanKind, ScanReport, ScanState, ThemePref } from "./lib/types";
 import { defaultBranding } from "./lib/types";
 
 function applyFixEvent(s: FixState, e: FixEvent): FixState {
@@ -61,6 +61,9 @@ export default function App() {
   const [machineId, setMachineId] = useState<string | null>(null);
   const [settings, setSettings] = useState<AppSettings>({ branding: defaultBranding });
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
+  const [updateDismissed, setUpdateDismissed] = useState(false);
+  const startupCheckDone = useRef(false);
   const [fixCatalog, setFixCatalog] = useState<FixInfo[]>([]);
   const [fixesUnlocked, setFixesUnlocked] = useState(false);
   const [fixState, setFixState] = useState<FixState | null>(null);
@@ -123,6 +126,16 @@ export default function App() {
       }
     })();
   }, [refreshHistory]);
+
+  // Optional start-up check for a new version (Settings → Updates). Silent if offline.
+  useEffect(() => {
+    if (!settingsLoaded || !settings.checkUpdates || startupCheckDone.current) return;
+    startupCheckDone.current = true;
+    api
+      .updateCheck()
+      .then((u) => u.newer && setUpdate(u))
+      .catch(() => {});
+  }, [settingsLoaded, settings.checkUpdates]);
 
   // Save settings shortly after they change.
   useEffect(() => {
@@ -212,6 +225,9 @@ export default function App() {
         onElevate={elevate}
         branding={settings.branding}
         onBranding={(branding) => setSettings((s) => ({ ...s, branding }))}
+        checkUpdates={!!settings.checkUpdates}
+        onCheckUpdates={(checkUpdates) => setSettings((s) => ({ ...s, checkUpdates }))}
+        update={update}
       />
     );
   } else if (page === "history") {
@@ -314,6 +330,18 @@ export default function App() {
             {isDark ? <Sun size={16} /> : <Moon size={16} />}
           </button>
         </header>
+        {update?.newer && !updateDismissed && page !== "settings" && (
+          <div className="banner update">
+            <Download size={16} />
+            <span>DxTool {update.latest} is available.</span>
+            <button className="btn small" onClick={() => setPage("settings")}>
+              See what's new
+            </button>
+            <button className="btn small ghost" onClick={() => setUpdateDismissed(true)}>
+              Later
+            </button>
+          </div>
+        )}
         {info && !info.isAdmin && (
           <div className="banner admin">
             <ShieldAlert size={16} />
