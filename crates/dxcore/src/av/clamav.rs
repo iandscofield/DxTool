@@ -234,7 +234,11 @@ fn update_inner(on_event: &(dyn Fn(AvEvent) + Sync)) -> Result<(), String> {
     let stop = AtomicBool::new(false);
     let result = std::thread::scope(|s| {
         s.spawn(|| watch_size(&db(), 0, "", &stop, on_event));
-        let emit = |l: &str| on_event(AvEvent::Output { line: l.into() });
+        let emit = |l: &str| {
+            if !(l.starts_with("Time:") && l.contains("ETA:")) {
+                on_event(AvEvent::Output { line: l.into() });
+            }
+        };
         let r = runner::run_cancellable(&exe, &[&conf_arg, &db_arg, "--stdout"], None, Duration::from_secs(3 * 3600), Some(&super::CANCEL), &emit);
         stop.store(true, Ordering::SeqCst);
         r
@@ -317,11 +321,33 @@ pub fn scan(scan: &mut VirusScan, paths: &[String], on_event: &(dyn Fn(AvEvent) 
     let done = std::sync::atomic::AtomicU64::new(0);
     let threats = std::sync::Mutex::new(Vec::<Threat>::new());
     let errors = std::sync::Mutex::new(Vec::<String>::new());
+    let unreadable = std::sync::Mutex::new(std::collections::HashSet::<String>::new());
     let last = std::sync::Mutex::new(Instant::now());
     let started = AtomicBool::new(false);
     let on_line = |l: &str| {
         if !is_file_line(l) {
-            if l.contains("ERROR") || l.contains("WARNING") {
+            // "LibClamAV Warning: Can't open file X: 225" = Windows blocked it because Defender detected a virus.
+            if let Some(rest) = l.strip_prefix("LibClamAV Warning: Can't open file ") {
+                if let Some(path) = rest.strip_suffix(": 225") {
+                    let t = Threat {
+                        name: "Detected by Microsoft Defender".into(),
+                        path: path.into(),
+                        engine: "defender".into(),
+                        status: "active".into(),
+                        action: "Windows is blocking this file because Defender detected a threat in it".into(),
+                        ..Default::default()
+                    };
+                    on_event(AvEvent::Threat { threat: t.clone() });
+                    threats.lock().unwrap().push(t);
+                }
+            } else if let Some(rest) = l.strip_prefix("WARNING: Can't open file ") {
+                // clamscan's own line for a file it couldn't read: still counts towards progress.
+                if let Some((path, _)) = rest.rsplit_once(": ") {
+                    unreadable.lock().unwrap().insert(path.to_lowercase());
+                }
+                let n = done.fetch_add(1, Ordering::SeqCst) + 1;
+                on_event(AvEvent::Progress { done: n, total, current: String::new() });
+            } else if l.contains("ERROR") {
                 errors.lock().unwrap().push(l.to_string());
             }
             return;
@@ -358,6 +384,8 @@ pub fn scan(scan: &mut VirusScan, paths: &[String], on_event: &(dyn Fn(AvEvent) 
     let _ = fs::remove_file(&list);
     scan.threats = threats.into_inner().unwrap();
     let errors = errors.into_inner().unwrap();
+    let blocked: std::collections::HashSet<String> = scan.threats.iter().filter(|t| t.engine == "defender").map(|t| t.path.to_lowercase()).collect();
+    let unread = unreadable.into_inner().unwrap().difference(&blocked).count();
     let scanned = done.load(Ordering::SeqCst);
     match result {
         Ok((code, lines)) => {
@@ -366,18 +394,23 @@ pub fn scan(scan: &mut VirusScan, paths: &[String], on_event: &(dyn Fn(AvEvent) 
                 .find_map(|l| l.strip_prefix("Scanned files:"))
                 .and_then(|n| n.trim().parse().ok())
                 .unwrap_or(scanned);
-            scan.log = lines.iter().filter(|l| !is_file_line(l)).cloned().collect::<Vec<_>>();
-            scan.log.extend(errors.iter().take(50).cloned());
+            let log: Vec<String> = lines.iter().filter(|l| !is_file_line(l)).cloned().collect();
+            scan.log = log[log.len().saturating_sub(200)..].to_vec();
             // 0 = clean, 1 = threats, 2 = some error (often just unreadable files).
             if code == 2 && scanned == 0 {
                 scan.outcome = "failed".into();
                 scan.message = format!("ClamAV couldn't run the scan. {}", errors.last().cloned().unwrap_or_default());
             } else {
-                let unread = errors.iter().filter(|e| is_file_line(e)).count();
-                scan.message = match scan.threats.len() {
+                let found = scan.threats.iter().filter(|t| t.engine == "clamav").count();
+                let plural = |n: usize| if n == 1 { "" } else { "s" };
+                scan.message = match found {
                     0 => "ClamAV found no threats.".into(),
-                    n => format!("ClamAV found {n} threat{}.", if n == 1 { "" } else { "s" }),
+                    n => format!("ClamAV found {n} threat{}.", plural(n)),
                 };
+                let nb = blocked.len();
+                if nb > 0 {
+                    scan.message.push_str(&format!(" {nb} more file{} couldn't be scanned because Microsoft Defender has already detected a threat in {}.", plural(nb), if nb == 1 { "it" } else { "them" }));
+                }
                 if unread > 0 {
                     scan.message.push_str(&format!(" {unread} file{} couldn't be read (usually because Windows is using them).", if unread == 1 { "" } else { "s" }));
                 }

@@ -308,13 +308,13 @@ pub fn remove_active(machine_id: &str, scan_id: &str) -> Result<VirusScan, Strin
             });
         }
     }
-    let since = chrono::DateTime::parse_from_rfc3339(&scan.started_at).map(|t| (t - chrono::Duration::seconds(5)).to_rfc3339()).unwrap_or_default();
+    let since = chrono::DateTime::parse_from_rfc3339(&scan.started_at).map(|t| (t - chrono::Duration::days(30)).to_rfc3339()).unwrap_or_default();
     // Defender works in the background; give it up to 30 seconds.
     for _ in 0..15 {
         std::thread::sleep(Duration::from_secs(2));
         let fresh = detections_since(&since);
         for t in scan.threats.iter_mut().filter(|t| t.engine == "defender" && t.status == "active") {
-            if let Some(f) = fresh.iter().find(|f| f.path.eq_ignore_ascii_case(&t.path) && f.name == t.name) {
+            if let Some(f) = fresh.iter().find(|f| f.path.eq_ignore_ascii_case(&t.path)) {
                 t.status = f.status.clone();
                 t.action = f.action.clone();
             }

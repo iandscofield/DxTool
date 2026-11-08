@@ -230,7 +230,7 @@ export function Virus({ av, machineId, mode }: { av: AvJobApi; machineId: string
                 )}
               </dl>
               <div className="av-actions">
-                <button className="btn" disabled={busy} onClick={() => av.scan("clamav", "quick")} title="Downloads, Desktop, temp folders, startup items, and programs in AppData and ProgramData.">
+                <button className="btn" disabled={busy} onClick={() => av.scan("clamav", "quick")} title="Risky file types in Downloads, Desktop and temp folders, startup items, and programs in AppData and ProgramData. Skips files over 20 MB. Usually 10-30 minutes.">
                   Quick scan
                 </button>
                 <button className="btn ghost" disabled={busy} onClick={() => av.scan("clamav", "full")} title="Every file on every drive. Can take several hours.">
@@ -490,7 +490,7 @@ function ThreatTable({ scan, machineId, onScanChanged, onReloadScan }: { scan: V
               <td className="wrap mono-sm">{t.path}</td>
               <td className={`nw threat-status st-${t.status}`}>{t.action}</td>
               <td className="nw">
-                {t.status === "active" && machineId && (
+                {t.status === "active" && t.engine === "clamav" && machineId && (
                   <div className="row-gap">
                     <button className="btn small ghost" disabled={!!busy} onClick={() => act(t.path, () => api.threatQuarantine(machineId, scan.id, t.path))} title="Move it into DxTool's quarantine, where it can't run. You can restore it later.">
                       {busy === t.path ? <Loader2 size={12} className="spin" /> : null} Quarantine

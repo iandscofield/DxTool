@@ -140,7 +140,8 @@ Two scanners, side by side.
 - Free, open-source scanner from Cisco Talos. It catches things one antivirus can miss and runs alongside Defender without conflicts.
 - **Download ClamAV** gets the official Windows version from ClamAV's GitHub releases, keeps only the scanner and the updater, then downloads the virus databases (about 450 MB the first time, about 300 MB on disk, inside `DxTool-Data\clamav`).
 - **Update databases** fetches the newest virus signatures. The databases' age is shown, with a warning when they're more than a week old.
-- **Quick scan:** Downloads, Desktop, temp folders, startup folders, programs set to start automatically, and runnable files in AppData and ProgramData. **Full scan:** every fixed drive (can take several hours). Or **scan a folder or file**.
+- **Quick scan** (usually 10 to 30 minutes): the file types that can carry viruses (programs, scripts, archives, disk images, Office macro documents, PDFs and web pages) near the top of Downloads, Desktop and the temp folders, plus startup folders, programs set to start automatically, and programs and scripts in AppData and ProgramData. Files over 20 MB are skipped, because ClamAV takes far too long on big installers and games.
+- **Full scan:** every file on every fixed drive (can take many hours). Or **scan a folder or file**.
 - Real progress: "12,345 of 50,000 files", the file being scanned, and threats as they're found.
 - **Remove ClamAV** deletes it and its databases to free the space.
 

@@ -7,10 +7,22 @@ use std::time::{Duration, Instant};
 
 const REPARSE_POINT: u32 = 0x400;
 
-/// File types that can run code: used for the quick scan of AppData and ProgramData.
-pub const RUNNABLE: &[&str] = &[
-    "exe", "dll", "scr", "com", "pif", "sys", "bat", "cmd", "ps1", "psm1", "vbs", "vbe", "js", "jse", "wsf", "wsh", "hta", "msi", "lnk", "jar", "cpl",
+/// Programs and scripts (runnable files minus the libraries they load): used for AppData
+/// and ProgramData, where apps keep thousands of DLLs that Defender watches anyway.
+pub const STARTERS: &[&str] = &[
+    "exe", "scr", "com", "pif", "bat", "cmd", "ps1", "psm1", "vbs", "vbe", "js", "jse", "wsf", "wsh", "hta", "msi", "lnk", "jar", "cpl",
 ];
+
+/// File types that can carry malware: runnable files plus archives, disk images, macro
+/// documents, PDFs and web pages. Used for the quick scan of Downloads, Desktop and temp.
+pub const RISKY: &[&str] = &[
+    "exe", "dll", "scr", "com", "pif", "sys", "bat", "cmd", "ps1", "psm1", "vbs", "vbe", "js", "jse", "wsf", "wsh", "hta", "msi", "lnk", "jar", "cpl",
+    "zip", "rar", "7z", "cab", "iso", "img", "vhd", "docm", "xlsm", "pptm", "doc", "xls", "ppt", "rtf", "pdf", "html", "htm", "svg", "reg", "url", "msix",
+    "appx",
+];
+
+/// Quick scans skip files bigger than this (large installers, games, AI models).
+const QUICK_MAX_SIZE: u64 = 20 * 1024 * 1024;
 
 /// Files Windows keeps locked that can't be read anyway.
 const SKIP_NAMES: &[&str] = &["pagefile.sys", "hiberfil.sys", "swapfile.sys", "dumpstack.log.tmp"];
@@ -18,12 +30,19 @@ const SKIP_NAMES: &[&str] = &["pagefile.sys", "hiberfil.sys", "swapfile.sys", "d
 pub struct Root {
     pub path: PathBuf,
     pub max_depth: Option<usize>,
-    pub only_runnable: bool,
+    /// Only these file types (lower-case extensions), or every file.
+    pub only: Option<&'static [&'static str]>,
+    pub max_size: Option<u64>,
 }
 
 impl Root {
     pub fn all(path: impl Into<PathBuf>) -> Self {
-        Self { path: path.into(), max_depth: None, only_runnable: false }
+        Self { path: path.into(), max_depth: None, only: None, max_size: None }
+    }
+
+    /// Quick-scan root: limited depth, only some file types, no huge files.
+    fn quick(path: impl Into<PathBuf>, depth: usize, only: &'static [&'static str]) -> Self {
+        Self { path: path.into(), max_depth: Some(depth), only: Some(only), max_size: Some(QUICK_MAX_SIZE) }
     }
 }
 
@@ -70,11 +89,14 @@ pub fn collect(roots: &[Root], exclude: &[PathBuf], progress: &dyn Fn(u64, &str)
                     if SKIP_NAMES.contains(&name.as_str()) {
                         continue;
                     }
-                    if root.only_runnable {
+                    if let Some(only) = root.only {
                         let ext = name.rsplit_once('.').map(|(_, x)| x).unwrap_or("");
-                        if !RUNNABLE.contains(&ext) {
+                        if !only.contains(&ext) {
                             continue;
                         }
+                    }
+                    if root.max_size.is_some_and(|max| m.len() > max) {
+                        continue;
                     }
                     if seen.insert(p.to_string_lossy().to_lowercase()) {
                         out.push(p);
@@ -160,31 +182,32 @@ fn autorun_programs() -> Vec<PathBuf> {
     v
 }
 
-/// Where malware usually lands: downloads, desktop, temp folders, startup folders,
-/// programs that start automatically, and runnable files in AppData and ProgramData.
+/// Where malware usually lands: risky files near the top of Downloads, Desktop and the temp
+/// folders, startup folders, programs that start automatically, and programs and scripts
+/// in AppData and ProgramData. Files over 20 MB are skipped (they'd take far too long).
 pub fn quick_roots() -> Vec<Root> {
     let mut v = Vec::new();
     let profile = env_path("USERPROFILE");
     if let Some(p) = &profile {
-        v.push(Root::all(p.join("Downloads")));
-        v.push(Root::all(p.join("Desktop")));
+        v.push(Root::quick(p.join("Downloads"), 2, RISKY));
+        v.push(Root::quick(p.join("Desktop"), 2, RISKY));
     }
     if let Some(t) = env_path("TEMP") {
-        v.push(Root::all(t));
+        v.push(Root::quick(t, 2, RISKY));
     }
     if let Some(w) = env_path("SystemRoot") {
-        v.push(Root::all(w.join("Temp")));
+        v.push(Root::quick(w.join("Temp"), 2, RISKY));
     }
     if let Some(a) = env_path("APPDATA") {
         v.push(Root::all(a.join(r"Microsoft\Windows\Start Menu\Programs\Startup")));
-        v.push(Root { path: a, max_depth: Some(3), only_runnable: true });
+        v.push(Root::quick(a, 3, STARTERS));
     }
     if let Some(l) = env_path("LOCALAPPDATA") {
-        v.push(Root { path: l, max_depth: Some(3), only_runnable: true });
+        v.push(Root::quick(l, 3, STARTERS));
     }
     if let Some(pd) = env_path("ProgramData") {
         v.push(Root::all(pd.join(r"Microsoft\Windows\Start Menu\Programs\StartUp")));
-        v.push(Root { path: pd, max_depth: Some(3), only_runnable: true });
+        v.push(Root::quick(pd, 3, STARTERS));
     }
     v.extend(autorun_programs().into_iter().map(Root::all));
     v

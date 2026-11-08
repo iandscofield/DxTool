@@ -4,6 +4,26 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.5.1 · ClamAV tested on a real PC · 2026-11-08
+
+### Fixed
+- **ClamAV quick scan was far too slow.** On this PC it took **2 hours** and went through 58,000 files, because unpacked programs in Downloads (one AI tool alone had 27,000 files) and big installers were all included. It now looks only at the file types that can carry viruses, near the top of Downloads, Desktop and temp, skips files over 20 MB, and checks programs and scripts (not app libraries) in AppData and ProgramData. The same PC now takes **24 minutes** for about 1,500 files.
+- **Files Defender had already caught were reported as "no threats".** When Defender blocks a file, ClamAV can't open it. DxTool now lists such a file as a threat "Detected by Microsoft Defender" and says how many files that happened to.
+- **"Remove with Defender"** now finds each file even when Defender reports it under a different threat name, and looks back far enough to find older detections.
+- On Defender's threats, DxTool's own Quarantine/Delete buttons are hidden; use **Remove with Defender** for those.
+- The database update log no longer fills with download progress lines.
+
+### Good to know
+- **ClamAV is slow on Windows:** about half a second per small file, and up to a minute for a large installer or PDF. Loading its 3.6 million signatures takes 1 to 2 minutes before any file is scanned. Defender's own checks on every file ClamAV opens probably add to this.
+
+### Tested
+- **ClamAV, end to end, on this PC:** download and install (ClamAV 1.5.4, 3.6 million signatures), database update, quick scans (no threats on this PC), a harmless home-made test signature to check that a detection is reported and can be quarantined, and a file Defender had already blocked.
+
+### Not tested yet
+- **Connecting your real Claude Desktop.** Try **Connect to Claude Desktop** in Settings, then fully quit and reopen Claude Desktop.
+
+---
+
 ## Version 0.5.0 · Stage 6: Virus scanning and Claude · 2026-11-07
 
 ### New
