@@ -144,14 +144,13 @@ fn sums_url(release: &Value) -> Option<String> {
         .map(String::from)
 }
 
-fn info_from(release: &Value) -> UpdateInfo {
+fn info_from(release: &Value, current: &str, kind: &str) -> UpdateInfo {
     let s = |k: &str| release.get(k).and_then(Value::as_str).unwrap_or("").to_string();
-    let kind = install_kind();
     let latest = s("tag_name").trim_start_matches(['v', 'V']).to_string();
     let (name, _, size) = asset_for(release, kind).unwrap_or_default();
     UpdateInfo {
-        current: current_version().into(),
-        newer: is_newer(&latest, current_version()),
+        current: current.into(),
+        newer: is_newer(&latest, current),
         latest,
         notes: s("body"),
         published: s("published_at"),
@@ -164,7 +163,7 @@ fn info_from(release: &Value) -> UpdateInfo {
 
 /// Looks up the latest release on GitHub.
 pub fn check() -> Result<UpdateInfo, String> {
-    Ok(info_from(&latest_release()?))
+    Ok(info_from(&latest_release()?, current_version(), install_kind()))
 }
 
 fn sha256_of(path: &Path) -> Result<String, String> {
@@ -192,9 +191,9 @@ fn expected_hash(sums: &str, name: &str) -> Option<String> {
 }
 
 /// Downloads and checks the newest version. Returns the downloaded file.
-fn fetch(progress: &(dyn Fn(u64, u64) + Sync)) -> Result<(UpdateInfo, PathBuf), String> {
+fn fetch(current: &str, kind: &str, progress: &(dyn Fn(u64, u64) + Sync)) -> Result<(UpdateInfo, PathBuf), String> {
     let release = latest_release()?;
-    let info = info_from(&release);
+    let info = info_from(&release, current, kind);
     if !info.newer {
         return Err(format!("DxTool {} is already the newest version.", info.current));
     }
@@ -222,15 +221,24 @@ fn fetch(progress: &(dyn Fn(u64, u64) + Sync)) -> Result<(UpdateInfo, PathBuf), 
 /// Downloads and installs the newest version. On success the caller should close DxTool
 /// straight away: the new version (or the installer) is already starting.
 pub fn install(progress: &(dyn Fn(u64, u64) + Sync)) -> Result<String, String> {
-    let (info, file) = fetch(progress)?;
+    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
+    install_as(&exe, current_version(), install_kind(), true, progress)
+}
+
+/// [`install`] for a given program file, version and kind (the test tool uses this to act as an
+/// older copy). `start` launches the new version afterwards.
+pub fn install_as(exe: &Path, current: &str, kind: &str, start: bool, progress: &(dyn Fn(u64, u64) + Sync)) -> Result<String, String> {
+    let (info, file) = fetch(current, kind, progress)?;
     if info.install_kind == "installed" {
         // /UPDATE keeps settings and shortcuts, /P shows only a progress bar, /R restarts DxTool after.
         std::process::Command::new(&file).args(["/UPDATE", "/P", "/R"]).spawn().map_err(|e| format!("Couldn't start the installer: {e}"))?;
         return Ok(format!("Installing DxTool {}. DxTool will close and reopen by itself.", info.latest));
     }
-    let exe = std::env::current_exe().map_err(|e| e.to_string())?;
-    replace_exe(&exe, &file)?;
-    std::process::Command::new(&exe).spawn().map_err(|e| format!("DxTool {} is installed, but couldn't be started: {e}. Open it again by hand.", info.latest))?;
+    replace_exe(exe, &file)?;
+    if !start {
+        return Ok(format!("DxTool {} is installed.", info.latest));
+    }
+    std::process::Command::new(exe).spawn().map_err(|e| format!("DxTool {} is installed, but couldn't be started: {e}. Open it again by hand.", info.latest))?;
     Ok(format!("DxTool {} is installed and is starting now.", info.latest))
 }
 

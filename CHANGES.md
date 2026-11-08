@@ -25,6 +25,9 @@ Newest first. Written in plain English: what changed and why it matters.
   - "processor getting old".
 - **Automatic tests** for reading memory part numbers and the Windows 11 processor rule.
 - **The page in the preview browser,** and the Claude tool on the real program.
+- **Updating from 0.6.0 to 0.7.0, using the real GitHub releases:**
+  - **Portable:** the published 0.6.0 DxTool.exe was updated by DxTool's own update code while it was running. It downloaded and checked 0.7.0, then swapped the program file.
+  - **Installed:** the published 0.6.0 installer, then the 0.7.0 installer in DxTool's quiet update mode. Saved data was kept, and the test copy was removed afterwards.
 
 ---
 
