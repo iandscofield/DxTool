@@ -1,5 +1,5 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
-import type { UpdateInfo, AvEngine, AvEvent, AvKind, AvStatus, ClaudeStatus, QuarantineItem, Threat, VirusScan, AppInfo, AppSettings, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
+import type { UpgradeReport, UpdateInfo, AvEngine, AvEvent, AvKind, AvStatus, ClaudeStatus, QuarantineItem, Threat, VirusScan, AppInfo, AppSettings, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
 import { defaultBranding } from "./types";
 
 /** True inside the DxTool window; false when the UI is opened in a normal browser during development. */
@@ -134,6 +134,71 @@ export const api = {
           exe: "C:\\Tools\\DxTool\\DxTool.exe",
           claudeCodeCommand: 'claude mcp add --scope user dxtool -- "C:\\Tools\\DxTool\\DxTool.exe" --mcp',
         }),
+  upgradeAdvice: (refresh: boolean): Promise<UpgradeReport> =>
+    inTauri
+      ? invoke<UpgradeReport>("upgrade_advice", { refresh })
+      : new Promise((r) =>
+          setTimeout(
+            () =>
+              r({
+                generatedAt: new Date().toISOString(),
+                pcName: "HP ProBook 450 G3 (preview)",
+                pcKind: "laptop",
+                limited: null,
+                items: [
+                  {
+                    id: "win11_blocked",
+                    area: "Windows",
+                    priority: "high",
+                    cost: "Expensive",
+                    title: "This PC can't run Windows 11 yet",
+                    why: "Windows 10 stopped getting free security updates in October 2025. It can't move to Windows 11 because the processor (Intel Core i5-6200U) is older than Windows 11 supports.",
+                    how: "The choices: a newer PC, Microsoft's paid Extended Security Updates for Windows 10, or a free operating system such as Linux Mint.",
+                  },
+                  {
+                    id: "memory_xmp",
+                    area: "Memory",
+                    priority: "high",
+                    cost: "Free",
+                    title: "Turn on XMP so the memory runs at its full 6000 MT/s",
+                    why: "The memory is sold as 6000 MT/s but runs at 4000 MT/s, the safe default speed.",
+                    how: "Open the BIOS setup, find XMP, choose Profile 1, then save and exit.",
+                  },
+                  {
+                    id: "system_ssd",
+                    area: "Storage",
+                    priority: "high",
+                    cost: "Low cost",
+                    title: "Move Windows to an SSD",
+                    why: "Windows is on a spinning hard drive (500 GB), the biggest cause of slow start-up.",
+                    how: "Replace it with a 500GB SSD and copy Windows across with the SSD maker's free cloning tool.",
+                    search: "500GB SSD",
+                  },
+                  {
+                    id: "battery_bat0",
+                    area: "Battery",
+                    priority: "medium",
+                    cost: "Moderate",
+                    title: "Replace the battery: it holds only 62% of its original charge",
+                    why: "The battery has worn down to 62% of its design capacity.",
+                    how: "Search for a replacement battery for this laptop model.",
+                    search: "HP TE04XL laptop battery",
+                  },
+                  {
+                    id: "cpu_old",
+                    area: "Processor",
+                    priority: "low",
+                    cost: "Expensive",
+                    title: "The processor is getting old",
+                    why: "The Intel Core i5-6200U is a generation 6 processor, from 2015 or earlier.",
+                    how: "When a bigger upgrade is due, a newer PC is usually better value.",
+                  },
+                ],
+                good: ["16 GB of memory is plenty for everyday use."],
+              }),
+            500,
+          ),
+        ),
   installKind: () => (inTauri ? invoke<string>("install_kind") : Promise.resolve("portable")),
   updateCheck: (): Promise<UpdateInfo> =>
     inTauri

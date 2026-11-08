@@ -55,6 +55,7 @@ export type Mode = "simple" | "advanced";
 export type ThemePref = "system" | "dark" | "light";
 export type Accent = "blue" | "purple" | "red" | "green" | "orange";
 export type Page =
+  | "upgrades"
   | "overview"
   | "hardware"
   | "health"
@@ -415,4 +416,24 @@ export interface ClaudeStatus {
   configPath: string;
   exe: string;
   claudeCodeCommand: string;
+}
+
+export interface Upgrade {
+  id: string;
+  area: string;
+  priority: "high" | "medium" | "low";
+  cost: string;
+  title: string;
+  why: string;
+  how: string;
+  search?: string | null;
+}
+
+export interface UpgradeReport {
+  generatedAt: string;
+  pcName: string;
+  pcKind: "desktop" | "laptop";
+  items: Upgrade[];
+  good: string[];
+  limited?: string | null;
 }

@@ -166,6 +166,7 @@ Connect DxTool to Claude so you can ask things like "why does my PC keep crashin
   - read the full hardware inventory;
   - search the Windows event logs;
   - check antivirus status and virus scan results;
+  - get upgrade recommendations;
   - see which DxTool fixes exist and which have already been run.
 - **Claude can't run repairs or delete files.** It recommends DxTool's fixes by name, and you run them in DxTool, which makes a restore point first.
 - Needs Claude Desktop or Claude Code and a Claude account. DxTool itself sends nothing anywhere: Claude asks, and DxTool answers on your PC.
@@ -198,6 +199,21 @@ Click any item to open a side panel with everything about it: summary, connectio
 
 ---
 
+## Upgrades ✅
+A page of upgrade advice for this PC, worked out from its hardware on the PC itself (no internet needed). Each suggestion says how important it is (**Do this first**, **Worth doing**, **Optional**), a rough cost (**Free**, **Low cost**, **Moderate**, **Expensive**), why it helps and exactly what to do.
+- **Memory:**
+  - too little for Windows 10/11, with the exact sticks to add for the empty slots (or a matched kit when that works better);
+  - only one stick, so it runs at half speed;
+  - **memory running slower than it's sold as**, because the XMP/EXPO setting is off in the BIOS (a free speed-up DxTool reads from the memory's part number).
+- **Drives:** Windows on a slow spinning hard drive (move to an SSD), a drive Windows says is failing, a drive that's too small, or C: nearly full.
+- **Windows 11:** on Windows 10, whether this PC can upgrade for free, and if not, exactly why (processor too old, TPM chip, legacy BIOS mode, memory) and what the options are.
+- **Laptop battery** worn below 70% of its original capacity.
+- **Graphics:** no graphics card or too little video memory for modern games (desktops), only as an optional suggestion.
+- **Processor** age, for very old PCs.
+- An **Already good** list, so you can see what doesn't need changing.
+- Laptops get laptop advice (SO-DIMM memory, check for soldered memory, no graphics card upgrades).
+- **Claude** can ask for the same advice.
+
 ## Getting DxTool ✅
 Download from the **Releases** page on GitHub (github.com/iandscofield/DxTool/releases). Two choices, same program:
 - **DxTool.exe (portable):** no installing. Put it in any folder or on a USB stick and double-click it. Its saved scans, reports and settings live in a `DxTool-Data` folder right next to it, so the whole thing can be carried from PC to PC.
@@ -216,11 +232,10 @@ Download from the **Releases** page on GitHub (github.com/iandscofield/DxTool/re
 - **Check when DxTool starts** (off unless you turn it on): shows a note at the top of the window when a new version is out. DxTool only goes online when you check, or with this setting on.
 - If Claude is using DxTool during an update, Claude's connection drops until you restart Claude Desktop.
 
-## Extra Features 1 🔜 (next)
+## Extra Features 1 🔜 (in progress)
 From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click.
 - **Newest graphics drivers straight from NVIDIA, AMD and Intel** (Windows Update is already used).
 - **Part prices:** find the current retail price of the parts in this PC.
-- **Upgrade recommendations:** for example "2 empty memory slots, adding 16 GB would help", "replace the hard drive with an SSD", or "this PC can't run Windows 11 because…".
 - **Game check:** compare a game's minimum and recommended requirements with this PC's hardware, including games already installed through Steam.
 - **Phone diagnostics:** check a connected phone (battery health, storage and so on).
 - **Phone backups:** back up photos and text messages from a phone to the PC.

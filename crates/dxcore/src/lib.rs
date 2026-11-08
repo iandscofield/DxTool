@@ -32,4 +32,6 @@ pub mod platform;
 #[cfg(windows)]
 pub mod update;
 #[cfg(windows)]
+pub mod upgrades;
+#[cfg(windows)]
 pub mod wmiutil;

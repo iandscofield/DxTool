@@ -50,8 +50,8 @@ pub struct Item {
     pub pnp_ids: Vec<String>,
 }
 
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
 pub struct Category {
     pub id: String,
     pub title: String,
@@ -62,8 +62,8 @@ pub struct Category {
     pub elapsed_ms: u64,
 }
 
-#[derive(Serialize, Clone, Debug)]
-#[serde(rename_all = "camelCase")]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase", default)]
 pub struct Inventory {
     pub collected_at: String,
     pub computer_name: String,
@@ -501,4 +501,35 @@ pub enum AvEvent {
     /// `total` is 0 when the amount of work isn't known.
     Progress { done: u64, total: u64, current: String },
     Threat { threat: Threat },
+}
+
+/// One upgrade recommendation.
+#[derive(Serialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Upgrade {
+    pub id: String,
+    /// Memory, Storage, Windows, Graphics, Battery, Processor.
+    pub area: String,
+    /// "high", "medium" or "low".
+    pub priority: String,
+    /// "Free", "Low cost", "Moderate" or "Expensive".
+    pub cost: String,
+    pub title: String,
+    pub why: String,
+    pub how: String,
+    /// Shop search phrase for the part, when there is one to buy.
+    pub search: Option<String>,
+}
+
+#[derive(Serialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct UpgradeReport {
+    pub generated_at: String,
+    pub pc_name: String,
+    /// "desktop" or "laptop".
+    pub pc_kind: String,
+    pub items: Vec<Upgrade>,
+    /// Things that are already fine.
+    pub good: Vec<String>,
+    pub limited: Option<String>,
 }

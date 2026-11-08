@@ -6,6 +6,7 @@ import {
   History,
   LayoutDashboard,
   ScanSearch,
+  Rocket,
   Settings,
   ShieldCheck,
   Wrench,
@@ -29,6 +30,7 @@ const main: NavItem[] = [
   { id: "virus", label: "Virus scan", icon: Bug },
 ];
 const tools: NavItem[] = [
+  { id: "upgrades", label: "Upgrades", icon: Rocket },
   { id: "history", label: "History", icon: History },
   { id: "reports", label: "Reports", icon: FileText },
   { id: "fixes", label: "Fixes", icon: Wrench },

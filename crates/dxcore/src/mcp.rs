@@ -15,7 +15,7 @@ const PROTOCOLS: &[&str] = &["2025-06-18", "2025-03-26", "2024-11-05"];
 const INSTRUCTIONS: &str = "DxTool is a Windows diagnostic tool running on the user's PC. \
 Start with get_pc_overview. Run run_health_scan (fast takes seconds, full under a minute) to check drives, crashes, \
 Windows Update, drivers, security and more; findings come with plain-English advice. Use get_hardware_inventory for \
-detailed specs and query_event_log to dig into crashes and errors. DxTool's repairs (SFC, DISM, chkdsk, driver updates, \
+detailed specs, get_upgrade_recommendations for what to upgrade or whether Windows 11 is possible, and query_event_log to dig into crashes and errors. DxTool's repairs (SFC, DISM, chkdsk, driver updates, \
 etc.) and virus removal are run by the user inside the DxTool app, which creates a restore point first: recommend them \
 by name rather than giving manual commands when a DxTool fix exists. Explain things simply; the user may not be technical.";
 
@@ -65,6 +65,11 @@ fn tools() -> Value {
                 },
                 "required": ["machine_id", "scan_id"]
             }
+        },
+        {
+            "name": "get_upgrade_recommendations",
+            "description": "DxTool's upgrade advice for this PC, worked out from its hardware: memory (amount, empty slots, XMP/EXPO switched off), moving Windows to an SSD, failing or full drives, Windows 11 readiness, worn laptop batteries, graphics and processor age. Each item has a priority, rough cost, why and how. Also lists what is already fine.",
+            "inputSchema": { "type": "object", "properties": {} }
         },
         {
             "name": "get_hardware_inventory",
@@ -195,8 +200,9 @@ pub fn call_tool(name: &str, a: &Value) -> Result<String, String> {
         }
         "get_saved_scan" => load_scan(arg_str(a, "machine_id").ok_or("machine_id is required")?, arg_str(a, "scan_id").ok_or("scan_id is required")?, arg_bool(a, "include_details")),
         "list_machines" => Ok(machines_text()),
+        "get_upgrade_recommendations" => Ok(upgrades_text(&crate::upgrades::for_this_pc())),
         "get_hardware_inventory" => {
-            let inv = crate::inventory::collect();
+            let inv = crate::upgrades::inventory();
             let cat = arg_str(a, "category");
             let full = a.get("full_detail").and_then(Value::as_bool).unwrap_or(cat.is_some());
             inventory_text(&inv, cat, full)
@@ -606,4 +612,27 @@ pub fn claude_setup(remove: bool) -> Result<String, String> {
     } else {
         "DxTool was added to Claude Desktop. Quit Claude Desktop completely (right-click its tray icon → Quit) and open it again.".into()
     })
+}
+
+fn upgrades_text(r: &crate::model::UpgradeReport) -> String {
+    let mut out = format!("Upgrade recommendations for {} ({})\n", r.pc_name, r.pc_kind);
+    if r.items.is_empty() {
+        out.push_str("\nNo upgrades needed: nothing stands out.\n");
+    }
+    for (i, u) in r.items.iter().enumerate() {
+        out.push_str(&format!("\n{}. [{} priority · {} · {}] {}\n   Why: {}\n   How: {}\n", i + 1, u.priority, u.area, u.cost, u.title, u.why, u.how));
+        if let Some(s) = &u.search {
+            out.push_str(&format!("   Part to search for: {s}\n"));
+        }
+    }
+    if !r.good.is_empty() {
+        out.push_str("\nAlready fine:\n");
+        for g in &r.good {
+            out.push_str(&format!("- {g}\n"));
+        }
+    }
+    if let Some(l) = &r.limited {
+        out.push_str(&format!("\nNote: {l}\n"));
+    }
+    out
 }

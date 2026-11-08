@@ -4,6 +4,30 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.7.0 · Extra Features 1: Upgrade recommendations · 2026-11-08
+
+### New
+- **Upgrades page** (in the sidebar under Tools). Upgrade advice worked out from the PC's own hardware, with no internet needed.
+  - Covers memory, drives, Windows 11 readiness, laptop batteries, graphics and processor age.
+  - Each suggestion has a priority, a rough cost, why it helps and what to do, plus the part to look for.
+  - Also lists what's already good.
+- **Spots memory running below its rated speed** (the XMP/EXPO setting switched off in the BIOS), by reading the memory's part number. Supported brands: Corsair, G.Skill, Kingston Fury, Crucial and TeamGroup. **This PC has it:** its DDR5-6000 memory runs at 4000.
+- **Claude** can ask DxTool for the same upgrade advice.
+
+### Tested
+- **This PC:** the only suggestion is turning on XMP. Everything else is correctly listed as already good: NVMe SSD, 64 GB, RTX 4070 Ti, 13th-gen processor.
+- **A made-up old Windows 10 laptop** (6th-gen i5, 4 GB, hard drive, worn battery, nearly full C:) gets, in order:
+  - "can't run Windows 11" with the reason;
+  - move to an SSD;
+  - a 2 × 8 GB memory kit;
+  - replace the battery;
+  - free up space;
+  - "processor getting old".
+- **Automatic tests** for reading memory part numbers and the Windows 11 processor rule.
+- **The page in the preview browser,** and the Claude tool on the real program.
+
+---
+
 ## Version 0.6.0 · Stage 7: Downloads, installer and updates · 2026-11-08
 
 This completes the version 1 plan.

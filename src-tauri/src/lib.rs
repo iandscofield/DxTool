@@ -28,9 +28,13 @@ fn app_info() -> AppInfo {
 /// Collects the full hardware inventory. Runs on a worker thread so the window stays responsive.
 #[tauri::command]
 async fn get_inventory() -> Result<Inventory, String> {
-    tauri::async_runtime::spawn_blocking(dxcore::inventory::collect)
-        .await
-        .map_err(|e| e.to_string())
+    tauri::async_runtime::spawn_blocking(|| {
+        let inv = dxcore::inventory::collect();
+        dxcore::upgrades::remember(&inv);
+        inv
+    })
+    .await
+    .map_err(|e| e.to_string())
 }
 
 /// Every health check, for the Custom scan picker.
@@ -296,6 +300,20 @@ async fn mcp_try_tool(name: String) -> Result<String, String> {
     blocking(move || dxcore::mcp::call_tool(&name, &serde_json::json!({}))).await?
 }
 
+// ───────────────────────── Upgrade advice ─────────────────────────
+
+/// Upgrade recommendations, from the hardware inventory (reused if read in the last few minutes).
+#[tauri::command]
+async fn upgrade_advice(refresh: bool) -> Result<dxcore::model::UpgradeReport, String> {
+    blocking(move || {
+        if refresh {
+            dxcore::upgrades::remember(&dxcore::inventory::collect());
+        }
+        dxcore::upgrades::for_this_pc()
+    })
+    .await
+}
+
 // ───────────────────────── Updates ─────────────────────────
 
 #[tauri::command]
@@ -384,6 +402,7 @@ pub fn run() {
             claude_status,
             claude_setup,
             mcp_try_tool,
+            upgrade_advice,
             install_kind,
             update_check,
             update_install
