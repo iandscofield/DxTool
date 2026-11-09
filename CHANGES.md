@@ -4,6 +4,29 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.11.0 · Extra Features 1: Android phones · 2026-11-08
+
+### New
+- **Phone page** (Sidebar → Tools → Phone) for Android phones connected by USB.
+  - **Android tools on click:** downloads Google's adb (about 8 MB) after you agree to Google's terms, checked against Google's checksum.
+  - **Setup help:** how to switch on USB debugging, and a live "looking for phones" that notices the phone and the "Allow" step.
+  - **Diagnostics:** battery (level, Android's health verdict, temperature, charge cycles and remaining capacity where reported), storage, security patch age, Android version, memory, uptime, with plain-English warnings.
+  - **Photo and video backup** to Pictures\Phone backups (or any folder), copying only new files each time, with progress and Stop.
+  - **Text message backup** as a readable page, a spreadsheet and a data file. If the phone blocks this, DxTool copies the backup made by the SMS Backup & Restore app instead.
+- **Claude** can read a connected phone's diagnostics.
+- That finishes Extra Features 1.
+
+### Fixed during testing
+- Starting the Android tools froze the check. Their background service kept DxTool's connections open, which in the full app could also have frozen other tasks running at the same moment. DxTool now starts that service completely separately.
+
+### Tested
+- **Android tools download on this PC:** Google's list gave version 37.0.1 (8 MB). It matched the checksum, unpacked and started. With no phone connected, the page and Claude both say so correctly, and stopping the service works.
+- **The Phone page** in the preview browser through every step: download, connected phone, diagnostics, backup progress and results.
+- **Automatic tests** for reading the phone's answers: device list, Google's download list, battery report (including capacity and cycles), storage, memory, the photo list (hidden thumbnail folders skipped, Windows-unsafe file names fixed) and text messages (including line breaks and commas inside messages).
+- **Not yet tested with a real phone:** the diagnostics and backups need an Android phone with USB debugging switched on.
+
+---
+
 ## Version 0.10.0 · Extra Features 1: Part prices · 2026-11-08
 
 ### New

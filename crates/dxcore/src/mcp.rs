@@ -15,7 +15,7 @@ const PROTOCOLS: &[&str] = &["2025-06-18", "2025-03-26", "2024-11-05"];
 const INSTRUCTIONS: &str = "DxTool is a Windows diagnostic tool running on the user's PC. \
 Start with get_pc_overview. Run run_health_scan (fast takes seconds, full under a minute) to check drives, crashes, \
 Windows Update, drivers, security and more; findings come with plain-English advice. Use get_hardware_inventory for \
-detailed specs, get_upgrade_recommendations for what to upgrade or whether Windows 11 is possible, check_game to see whether a game will run, check_newest_drivers for graphics and network driver updates, and query_event_log to dig into crashes and errors. DxTool's repairs (SFC, DISM, chkdsk, driver updates, \
+detailed specs, get_upgrade_recommendations for what to upgrade or whether Windows 11 is possible, check_game to see whether a game will run, check_newest_drivers for graphics and network driver updates, get_phone_info for a connected Android phone, and query_event_log to dig into crashes and errors. DxTool's repairs (SFC, DISM, chkdsk, driver updates, \
 etc.) and virus removal are run by the user inside the DxTool app, which creates a restore point first: recommend them \
 by name rather than giving manual commands when a DxTool fix exists. Explain things simply; the user may not be technical.";
 
@@ -69,6 +69,11 @@ fn tools() -> Value {
         {
             "name": "get_upgrade_recommendations",
             "description": "DxTool's upgrade advice for this PC, worked out from its hardware: memory (amount, empty slots, XMP/EXPO switched off), moving Windows to an SSD, failing or full drives, Windows 11 readiness, worn laptop batteries, graphics and processor age. Each item has a priority, rough cost, why and how. Also lists what is already fine, and this PC's main parts with shop search links for checking today's prices.",
+            "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+            "name": "get_phone_info",
+            "description": "Diagnostics for an Android phone connected to this PC by USB: model, Android version, security patch date, battery (level, Android's health verdict, temperature, charge cycles and remaining capacity where the phone reports them), storage, memory, uptime, with plain-English findings. Only works after the Android tools were downloaded on DxTool's Phone page and the phone allows USB debugging. Read-only; backups are started by the user in DxTool.",
             "inputSchema": { "type": "object", "properties": {} }
         },
         {
@@ -221,6 +226,7 @@ pub fn call_tool(name: &str, a: &Value) -> Result<String, String> {
         }
         "get_saved_scan" => load_scan(arg_str(a, "machine_id").ok_or("machine_id is required")?, arg_str(a, "scan_id").ok_or("scan_id is required")?, arg_bool(a, "include_details")),
         "list_machines" => Ok(machines_text()),
+        "get_phone_info" => phone_text(),
         "check_newest_drivers" => Ok(drivers_text(&crate::latest_drivers::check())),
         "list_installed_games" => Ok(games_text()),
         "check_game" => {
@@ -727,4 +733,52 @@ fn drivers_text(c: &crate::latest_drivers::DriverCheck) -> String {
     }
     out.push_str("\nOther drivers (chipset, audio, printers and so on) come from Windows Update: DxTool's 'Install driver updates' repair checks those.\n");
     out
+}
+
+fn phone_text() -> Result<String, String> {
+    let st = crate::phone::status();
+    if !st.tools_installed {
+        return Ok("The Android tools aren't downloaded yet. Ask the user to open DxTool's Phone page (Sidebar → Tools → Phone) and click the download button there; DxTool never downloads them without the user agreeing to Google's terms.".into());
+    }
+    if let Some(p) = st.problem {
+        return Ok(format!("The Android tools couldn't start: {p}"));
+    }
+    let ready: Vec<_> = st.devices.iter().filter(|d| d.state == "device").collect();
+    if ready.is_empty() {
+        return Ok(match st.devices.first() {
+            Some(d) if d.state == "unauthorized" => "A phone is connected but hasn't allowed this PC yet. Ask the user to unlock the phone and tap Allow on the \"Allow USB debugging?\" message.".into(),
+            Some(d) => format!("A phone is connected but not ready (state: {}). Unplugging and reconnecting it usually helps.", d.state),
+            None => "No Android phone is connected. The phone needs USB debugging switched on (Settings → About phone → tap Build number 7 times, then Developer options → USB debugging) and a data USB cable.".into(),
+        });
+    }
+    let mut out = String::new();
+    for d in ready {
+        let p = crate::phone::info(&d.serial)?;
+        let b = &p.battery;
+        out.push_str(&format!("{} · Android {} · security patch {}\n", p.title(), p.android, p.security_patch));
+        out.push_str(&format!(
+            "Battery: {}% {} · health \"{}\" · {} · {} · capacity {}\n",
+            b.level.map(|l| l.to_string()).unwrap_or("?".into()),
+            b.status,
+            b.health,
+            b.temperature_c.map(|t| format!("{t:.1} °C")).unwrap_or_default(),
+            b.cycle_count.map(|c| format!("{c} cycles")).unwrap_or("cycles not reported".into()),
+            b.health_percent.map(|h| format!("about {h:.0}% of new")).unwrap_or("not reported".into())
+        ));
+        out.push_str(&format!(
+            "Storage: {:.1} GB free of {:.1} GB · Memory: {:.1} GB available of {:.1} GB · Up {:.0} hours · {} apps installed by the user\n",
+            p.storage_free as f64 / 1e9,
+            p.storage_total as f64 / 1e9,
+            p.memory_available as f64 / 1e9,
+            p.memory_total as f64 / 1e9,
+            p.uptime_hours,
+            p.user_apps
+        ));
+        for f in &p.findings {
+            out.push_str(&format!("- [{}] {}. {}\n", f.level, f.title, f.detail));
+        }
+        out.push('\n');
+    }
+    out.push_str("Backups of photos and text messages are on DxTool's Phone page; the user starts them there.\n");
+    Ok(out)
 }

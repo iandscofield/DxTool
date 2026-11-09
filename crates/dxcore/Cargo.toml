@@ -11,6 +11,7 @@ serde_json = { version = "1", features = ["preserve_order"] }
 chrono = "0.4"
 base64 = "0.22"
 sha2 = "0.10"
+sha1 = "0.10"
 
 [target.'cfg(windows)'.dependencies]
 wmi = "0.18"
@@ -22,4 +23,5 @@ windows = { version = "0.62", features = [
     "Win32_UI_WindowsAndMessaging",
     "Win32_System_SystemInformation",
     "Win32_System_EventLog",
+    "Win32_System_Threading",
 ] }

@@ -169,6 +169,7 @@ Connect DxTool to Claude so you can ask things like "why does my PC keep crashin
   - get upgrade recommendations, with price-search links for this PC's parts;
   - list installed games and check whether a game will run;
   - check for newer graphics, Wi-Fi, Bluetooth and Ethernet drivers;
+  - read a connected Android phone's battery, storage and update status;
   - see which DxTool fixes exist and which have already been run.
 - **Claude can't run repairs or delete files.** It recommends DxTool's fixes by name, and you run them in DxTool, which makes a restore point first.
 - Needs Claude Desktop or Claude Code and a Claude account. DxTool itself sends nothing anywhere: Claude asks, and DxTool answers on your PC.
@@ -257,6 +258,29 @@ Are the most important drivers the newest? (Sidebar → Tools → Drivers.) Goes
 - The last check is saved and shown again next time, offline.
 - **Claude** can check for newer drivers too.
 
+## Phone (Android) ✅
+Check an Android phone and back it up to this PC over a USB cable. (Sidebar → Tools → Phone.) Not yet tried with a real phone: see CHANGES.md.
+- **First time:** DxTool downloads Google's free **Android tools** (adb, about 8 MB) after you tick that you agree to Google's terms. It checks the download against Google's published checksum and keeps it in DxTool's data folder.
+- **Connecting:** step-by-step instructions for switching on USB debugging, and the page notices the phone by itself within a few seconds. If the phone is waiting for you to tap **Allow**, the page says so.
+- **Diagnostics**, each with a plain-English verdict:
+  - **battery:** charge level, Android's own health verdict (Good, Overheating, Dead…), temperature, and, where the phone reports them, charge cycles and how much of its original capacity it still holds;
+  - **storage:** free space, with a warning when it's nearly full;
+  - **security updates:** how old the last security patch is, warning when the phone has probably stopped getting updates;
+  - Android version, memory, days since the last restart, number of apps you installed.
+- **Back up photos and videos:** everything in the camera (DCIM), Pictures and Movies folders, into the same folders under **Pictures\Phone backups\<phone name>** (or a folder you choose).
+  - Running it again copies **only new files**.
+  - Shows progress and can be stopped; files already copied are kept.
+  - Nothing is deleted from the phone.
+- **Back up text messages:** saved as
+  - **messages.html**, readable like a chat, one section per conversation, with contact names where the phone allows;
+  - **messages.csv** for Excel;
+  - **messages.json** for other programs.
+  - Picture messages (MMS) aren't included.
+  - Some phones block the PC from reading messages. DxTool then explains how to make a backup with the free **SMS Backup & Restore** app, and copies that backup file to the PC.
+- When DxTool closes, it stops the Android tools' background service too.
+- **Claude** can read the phone's diagnostics (not start backups).
+- iPhones aren't supported yet.
+
 ## Getting DxTool ✅
 Download from the **Releases** page on GitHub (github.com/iandscofield/DxTool/releases). Two choices, same program:
 - **DxTool.exe (portable):** no installing. Put it in any folder or on a USB stick and double-click it. Its saved scans, reports and settings live in a `DxTool-Data` folder right next to it, so the whole thing can be carried from PC to PC.
@@ -275,12 +299,11 @@ Download from the **Releases** page on GitHub (github.com/iandscofield/DxTool/re
 - **Check when DxTool starts** (off unless you turn it on): shows a note at the top of the window when a new version is out. DxTool only goes online when you check, or with this setting on.
 - If Claude is using DxTool during an update, Claude's connection drops until you restart Claude Desktop.
 
-## Extra Features 1 🔜 (in progress)
-From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click. Done so far: color themes, upgrade recommendations, game check, newest drivers, part prices.
-- **Phone diagnostics:** check a connected phone (battery health, storage and so on).
-- **Phone backups:** back up photos and text messages from a phone to the PC.
+## Extra Features 1 ✅
+From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click. All done: color themes, upgrade recommendations, game check, newest drivers, part prices, Android phone diagnostics and backups.
 
 ## Later 💭
+- **iPhone** diagnostics and backups.
 - Bootable USB version: rescue files, find out why Windows won't start, fix boot problems, offline virus scan and removal.
 - Mac support for the desktop app.
 - Live temperature and fan sensors (needs a safe driver approach).

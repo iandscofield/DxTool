@@ -314,6 +314,53 @@ async fn upgrade_advice(refresh: bool) -> Result<dxcore::model::UpgradeReport, S
     .await
 }
 
+// ───────────────────────── Android phones ─────────────────────────
+
+/// Whether the Android tools are downloaded, and which phones are connected.
+#[tauri::command]
+async fn phone_status() -> Result<dxcore::phone::PhoneStatus, String> {
+    blocking(dxcore::phone::status).await
+}
+
+/// Downloads Google's Android platform-tools (after the user agrees to Google's terms).
+#[tauri::command]
+async fn phone_tools_install(on_progress: Channel<Progress>) -> Result<String, String> {
+    blocking(move || {
+        dxcore::phone::install_tools(&|done, total| {
+            let _ = on_progress.send(Progress { done, total });
+        })
+    })
+    .await?
+}
+
+/// Diagnostics for one connected phone.
+#[tauri::command]
+async fn phone_info(serial: String) -> Result<dxcore::phone::PhoneInfo, String> {
+    blocking(move || dxcore::phone::info(&serial)).await?
+}
+
+/// Where backups go unless the user picks another folder.
+#[tauri::command]
+fn phone_default_folder() -> String {
+    dxcore::phone::default_folder()
+}
+
+/// Backs up "photos" or "messages" from a phone into `dest`.
+#[tauri::command]
+async fn phone_backup(serial: String, kind: String, dest: String, on_event: Channel<dxcore::phone::BackupEvent>) -> Result<dxcore::phone::BackupResult, String> {
+    blocking(move || {
+        dxcore::phone::backup(&serial, &kind, &dest, &|e| {
+            let _ = on_event.send(e);
+        })
+    })
+    .await?
+}
+
+#[tauri::command]
+fn phone_backup_cancel() {
+    dxcore::phone::cancel_backup();
+}
+
 // ───────────────────────── Newest drivers ─────────────────────────
 
 /// The last newest-drivers check, if there was one (offline).
@@ -443,6 +490,12 @@ pub fn run() {
             claude_setup,
             mcp_try_tool,
             upgrade_advice,
+            phone_status,
+            phone_tools_install,
+            phone_info,
+            phone_default_folder,
+            phone_backup,
+            phone_backup_cancel,
             drivers_last,
             drivers_check,
             games_installed,
@@ -457,6 +510,12 @@ pub fn run() {
             dxcore::update::cleanup();
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running DxTool");
+        .build(tauri::generate_context!())
+        .expect("error while running DxTool")
+        .run(|_, event| {
+            // Stop adb's background service so it doesn't hold files in DxTool-Data.
+            if let tauri::RunEvent::Exit = event {
+                dxcore::phone::stop();
+            }
+        });
 }

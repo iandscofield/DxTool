@@ -55,6 +55,7 @@ export type Mode = "simple" | "advanced";
 export type ThemePref = "system" | "dark" | "light";
 export type Accent = "blue" | "purple" | "red" | "green" | "orange";
 export type Page =
+  | "phone"
   | "drivers"
   | "games"
   | "upgrades"
@@ -513,4 +514,77 @@ export interface DriverCheck {
   items: DriverStatus[];
   problems: string[];
   nothingToCheck: boolean;
+}
+
+export interface PhoneDevice {
+  serial: string;
+  state: string;
+  model: string;
+}
+
+export interface PhoneStatus {
+  toolsInstalled: boolean;
+  toolsVersion: string;
+  devices: PhoneDevice[];
+  problem?: string | null;
+}
+
+export interface PhoneBattery {
+  level?: number | null;
+  status: string;
+  health: string;
+  temperatureC?: number | null;
+  voltageV?: number | null;
+  plugged: string;
+  cycleCount?: number | null;
+  healthPercent?: number | null;
+  capacityMah?: number | null;
+  designMah?: number | null;
+}
+
+export interface PhoneFinding {
+  level: "ok" | "warning" | "problem";
+  title: string;
+  detail: string;
+}
+
+export interface PhoneInfo {
+  serial: string;
+  manufacturer: string;
+  model: string;
+  name: string;
+  android: string;
+  sdk: number;
+  securityPatch: string;
+  battery: PhoneBattery;
+  storageTotal: number;
+  storageFree: number;
+  memoryTotal: number;
+  memoryAvailable: number;
+  uptimeHours: number;
+  userApps: number;
+  findings: PhoneFinding[];
+  collectedAt: string;
+}
+
+export interface BackupEvent {
+  phase: string;
+  done: number;
+  total: number;
+  bytesDone: number;
+  bytesTotal: number;
+  current: string;
+}
+
+export interface BackupResult {
+  kind: "photos" | "messages";
+  folder: string;
+  copied: number;
+  skipped: number;
+  failed: number;
+  bytes: number;
+  messages: number;
+  cancelled: boolean;
+  summary: string;
+  errors: string[];
 }

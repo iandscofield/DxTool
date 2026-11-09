@@ -30,6 +30,8 @@ pub mod machine;
 #[cfg(windows)]
 pub mod mcp;
 #[cfg(windows)]
+pub mod phone;
+#[cfg(windows)]
 pub mod report;
 #[cfg(windows)]
 pub mod platform;

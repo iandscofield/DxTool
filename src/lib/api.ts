@@ -1,5 +1,5 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
-import type { DriverCheck, GameCheck, InstalledGame, SearchHit, UpgradeReport, UpdateInfo, AvEngine, AvEvent, AvKind, AvStatus, ClaudeStatus, QuarantineItem, Threat, VirusScan, AppInfo, AppSettings, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
+import type { BackupEvent, BackupResult, PhoneInfo, PhoneStatus, DriverCheck, GameCheck, InstalledGame, SearchHit, UpgradeReport, UpdateInfo, AvEngine, AvEvent, AvKind, AvStatus, ClaudeStatus, QuarantineItem, Threat, VirusScan, AppInfo, AppSettings, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
 import { defaultBranding } from "./types";
 
 /** True inside the DxTool window; false when the UI is opened in a normal browser during development. */
@@ -12,6 +12,9 @@ async function mock<T>(name: string): Promise<T> {
   if (!r.ok) throw new Error("Not running inside DxTool and no development snapshot found.");
   return r.json();
 }
+
+/** Browser-preview state for the Phone page. */
+const mockPhone = { installed: false };
 
 export const api = {
   appInfo: () =>
@@ -110,10 +113,10 @@ export const api = {
   quarantineDelete: (id: string) =>
     inTauri ? invoke<void>("quarantine_delete", { id }) : Promise.resolve(savePref("mockQ", loadPref<QuarantineItem[]>("mockQ", []).filter((q) => q.id !== id))),
   openWindowsSecurity: () => (inTauri ? invoke<void>("open_windows_security") : Promise.resolve()),
-  pickFolder: async (): Promise<string | null> => {
+  pickFolder: async (title = "Choose a folder or drive to scan"): Promise<string | null> => {
     if (!inTauri) return "C:\\Users\\Example\\Downloads";
     const { open } = await import("@tauri-apps/plugin-dialog");
-    const r = await open({ directory: true, multiple: false, title: "Choose a folder or drive to scan" });
+    const r = await open({ directory: true, multiple: false, title });
     return typeof r === "string" ? r : null;
   },
   pickFile: async (): Promise<string | null> => {
@@ -134,6 +137,74 @@ export const api = {
           exe: "C:\\Tools\\DxTool\\DxTool.exe",
           claudeCodeCommand: 'claude mcp add --scope user dxtool -- "C:\\Tools\\DxTool\\DxTool.exe" --mcp',
         }),
+  phoneStatus: (): Promise<PhoneStatus> =>
+    inTauri
+      ? invoke<PhoneStatus>("phone_status")
+      : Promise.resolve(
+          mockPhone.installed
+            ? { toolsInstalled: true, toolsVersion: "37.0.1", devices: [{ serial: "1A2B3C4D", state: "device", model: "Pixel 7" }], problem: null }
+            : { toolsInstalled: false, toolsVersion: "", devices: [], problem: null },
+        ),
+  phoneToolsInstall: async (onProgress: (done: number, total: number) => void): Promise<string> => {
+    if (!inTauri) {
+      for (let i = 1; i <= 10; i++) {
+        await new Promise((r) => setTimeout(r, 120));
+        onProgress(i * 804499, 8044989);
+      }
+      mockPhone.installed = true;
+      return "Android tools 37.0.1 are ready.";
+    }
+    const ch = new Channel<{ done: number; total: number }>();
+    ch.onmessage = (p) => onProgress(p.done, p.total);
+    return invoke<string>("phone_tools_install", { onProgress: ch });
+  },
+  phoneInfo: (serial: string): Promise<PhoneInfo> =>
+    inTauri
+      ? invoke<PhoneInfo>("phone_info", { serial })
+      : new Promise((r) =>
+          setTimeout(
+            () =>
+              r({
+                serial,
+                manufacturer: "Google",
+                model: "Pixel 7",
+                name: "",
+                android: "16",
+                sdk: 36,
+                securityPatch: "2026-10-05",
+                battery: { level: 64, status: "Charging", health: "Good", temperatureC: 31.4, voltageV: 4.02, plugged: "USB", cycleCount: 612, healthPercent: 78.4, capacityMah: 3410, designMah: 4355 },
+                storageTotal: 128e9,
+                storageFree: 9.4e9,
+                memoryTotal: 7.6e9,
+                memoryAvailable: 2.9e9,
+                uptimeHours: 97,
+                userApps: 84,
+                collectedAt: new Date().toISOString(),
+                findings: [
+                  { level: "warning", title: "The battery holds about 78% of its original charge", detail: "Below 80% the phone runs out noticeably sooner and may shut down suddenly in the cold. A battery replacement is usually much cheaper than a new phone." },
+                  { level: "warning", title: "Storage is getting full (9.4 GB free of 128 GB)", detail: "Backing up and removing old videos is the quickest way to free space." },
+                  { level: "ok", title: "Security updates are recent", detail: "Security patch 2026-10-05." },
+                ],
+              }),
+            600,
+          ),
+        ),
+  phoneDefaultFolder: (): Promise<string> => (inTauri ? invoke<string>("phone_default_folder") : Promise.resolve("C:\\Users\\Example\\Pictures\\Phone backups")),
+  phoneBackup: async (serial: string, kind: "photos" | "messages", dest: string, onEvent: (e: BackupEvent) => void): Promise<BackupResult> => {
+    if (!inTauri) {
+      for (let i = 0; i <= 20; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+        onEvent({ phase: kind === "photos" ? "copying" : "messages", done: i * 30, total: 600, bytesDone: i * 150e6, bytesTotal: 3e9, current: `PXL_2026110${i}.jpg` });
+      }
+      return kind === "photos"
+        ? { kind, folder: `${dest}\\Google Pixel 7`, copied: 412, skipped: 188, failed: 0, bytes: 2.1e9, messages: 0, cancelled: false, summary: "Copied 412 new files (2.1 GB); 188 already backed up.", errors: [] }
+        : { kind, folder: `${dest}\\Google Pixel 7\\Messages\\2026-11-08 2015`, copied: 3, skipped: 0, failed: 0, bytes: 0, messages: 5321, cancelled: false, summary: "Saved 5321 text messages: messages.html to read, messages.csv for Excel, messages.json for other programs. Picture messages (MMS) aren't included.", errors: [] };
+    }
+    const ch = new Channel<BackupEvent>();
+    ch.onmessage = onEvent;
+    return invoke<BackupResult>("phone_backup", { serial, kind, dest, onEvent: ch });
+  },
+  phoneBackupCancel: (): Promise<void> => (inTauri ? invoke<void>("phone_backup_cancel") : Promise.resolve()),
   driversLast: (): Promise<DriverCheck | null> => (inTauri ? invoke<DriverCheck | null>("drivers_last") : Promise.resolve(null)),
   driversCheck: (): Promise<DriverCheck> =>
     inTauri

@@ -4,6 +4,7 @@ import { Sidebar } from "./components/Sidebar";
 import { Upgrades } from "./pages/Upgrades";
 import { Games } from "./pages/Games";
 import { Drivers } from "./pages/Drivers";
+import { Phone } from "./pages/Phone";
 import { Overview } from "./pages/Overview";
 import { Hardware } from "./pages/Hardware";
 import { Placeholder } from "./pages/Placeholder";
@@ -233,6 +234,8 @@ export default function App() {
         update={update}
       />
     );
+  } else if (page === "phone") {
+    content = <Phone />;
   } else if (page === "drivers") {
     content = <Drivers onWindowsUpdate={() => openFix("update_drivers")} />;
   } else if (page === "games") {
