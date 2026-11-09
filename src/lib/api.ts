@@ -320,6 +320,12 @@ export const api = {
                   },
                 ],
                 good: ["16 GB of memory is plenty for everyday use."],
+                parts: [
+                  { part: "Computer", name: "HP ProBook 450 G3", search: "HP ProBook 450 G3", note: "The whole laptop. Used prices (eBay) show what it's worth today." },
+                  { part: "Processor", name: "Intel Core i5-6200U", search: "Intel Core i5-6200U", note: "Built into the laptop: shown for reference only." },
+                  { part: "Memory", name: "SK hynix HMA851S6AFR6N-UH (1 × 4 GB DDR4)", search: "SK hynix HMA851S6AFR6N-UH", note: "Searched by the exact part number, so it finds the same kit. A kit may hold 2 or 4 sticks." },
+                  { part: "Drive", name: "WDC WD5000LPCX (500 GB)", search: "WDC WD5000LPCX", note: "" },
+                ],
               }),
             500,
           ),

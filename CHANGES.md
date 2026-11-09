@@ -4,6 +4,25 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.10.0 · Extra Features 1: Part prices · 2026-11-08
+
+### New
+- **Price search buttons on the Upgrades page.** Every suggestion that means buying something (an SSD, more memory, a graphics card) has buttons for **PCPartPicker**, **Amazon**, **Newegg** and **eBay**.
+- **Prices for this PC's parts:** a new card at the bottom of the Upgrades page listing the main parts with the same buttons: the computer or laptop model, processor, graphics card, memory, drives, motherboard and monitors.
+  - Memory is searched by its exact part number (for example "Corsair CMH32GX5M2E6000C36"), so it finds the same kit.
+  - Processor names are cleaned up the way shops list them ("Intel Core i7-13700F").
+  - Identical drives are listed once, with a count.
+- DxTool doesn't read prices itself, as agreed: the buttons open the shop's search in your browser.
+- **Claude** gets the parts list and price-search links with the upgrade advice.
+
+### Tested
+- **This PC:** listed the MSI computer, i7-13700F, RTX 4070 Ti, the Corsair memory kit (by part number), 2 × Samsung 990 PRO 4TB and an MSI M450, the MSI PRO Z690-A WIFI motherboard and both monitors (LG 27GL850, Samsung Odyssey G70NC). Virtual displays were left out.
+- **The made-up old laptop:** no graphics card or motherboard listed (they can't be swapped), and the processor marked "for reference only".
+- **Automatic tests** for maker names ("Micro-Star International" → MSI) and placeholder names like "To Be Filled By O.E.M.".
+- **The Upgrades page** in the preview browser, and Claude's upgrade tool on the real program.
+
+---
+
 ## Version 0.9.0 · Extra Features 1: Newest drivers · 2026-11-08
 
 ### New

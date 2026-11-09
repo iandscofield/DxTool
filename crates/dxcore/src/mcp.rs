@@ -68,7 +68,7 @@ fn tools() -> Value {
         },
         {
             "name": "get_upgrade_recommendations",
-            "description": "DxTool's upgrade advice for this PC, worked out from its hardware: memory (amount, empty slots, XMP/EXPO switched off), moving Windows to an SSD, failing or full drives, Windows 11 readiness, worn laptop batteries, graphics and processor age. Each item has a priority, rough cost, why and how. Also lists what is already fine.",
+            "description": "DxTool's upgrade advice for this PC, worked out from its hardware: memory (amount, empty slots, XMP/EXPO switched off), moving Windows to an SSD, failing or full drives, Windows 11 readiness, worn laptop batteries, graphics and processor age. Each item has a priority, rough cost, why and how. Also lists what is already fine, and this PC's main parts with shop search links for checking today's prices.",
             "inputSchema": { "type": "object", "properties": {} }
         },
         {
@@ -660,6 +660,13 @@ fn upgrades_text(r: &crate::model::UpgradeReport) -> String {
     }
     if let Some(l) = &r.limited {
         out.push_str(&format!("\nNote: {l}\n"));
+    }
+    if !r.parts.is_empty() {
+        out.push_str("\nThis PC's parts, with shop searches for today's prices (DxTool doesn't read prices; open a link or search the web):\n");
+        for p in &r.parts {
+            let links = crate::model::shop_links(&p.search);
+            out.push_str(&format!("- {}: {} (search \"{}\"; {}; {})\n", p.part, p.name, p.search, links[0].1, links[3].1));
+        }
     }
     out
 }

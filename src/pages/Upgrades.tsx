@@ -1,7 +1,53 @@
 import { useEffect, useState } from "react";
-import { Battery, CheckCircle2, Cpu, Gauge, HardDrive, Loader2, MemoryStick, Monitor, RefreshCw, Rocket, type LucideIcon } from "lucide-react";
+import { Battery, CheckCircle2, ExternalLink, Tag, Cpu, Gauge, HardDrive, Loader2, MemoryStick, Monitor, RefreshCw, Rocket, type LucideIcon } from "lucide-react";
 import { api } from "../lib/api";
-import type { Upgrade, UpgradeReport } from "../lib/types";
+import { shopLinks } from "../lib/shops";
+import type { PartPrice, Upgrade, UpgradeReport } from "../lib/types";
+
+/** A row of shop search buttons for one search phrase. */
+function ShopButtons({ search }: { search: string }) {
+  return (
+    <div className="shop-buttons">
+      {shopLinks(search).map((l) => (
+        <button key={l.shop} className="btn ghost small" onClick={() => api.openPath(l.url)} title={`Search ${l.shop} for "${search}"`}>
+          {l.shop} <ExternalLink size={11} />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function PartsCard({ parts }: { parts: PartPrice[] }) {
+  return (
+    <section className="card">
+      <div className="card-head">
+        <h2>
+          <Tag size={16} /> Prices for this PC's parts
+        </h2>
+      </div>
+      <p className="muted">What would each part cost today, new or used? Each button opens that shop's search in the browser.</p>
+      <div className="game-table-wrap">
+        <table className="simple-table parts-table">
+          <tbody>
+            {parts.map((p) => (
+              <tr key={`${p.part}-${p.search}`}>
+                <th>{p.part}</th>
+                <td>
+                  {p.name}
+                  {p.note && <div className="muted small">{p.note}</div>}
+                </td>
+                <td className="right">
+                  <ShopButtons search={p.search} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="muted small">DxTool doesn't read or store prices: it only opens the searches. PCPartPicker compares many shops at once; eBay shows used prices, handy for older parts. Prices are for the US stores.</p>
+    </section>
+  );
+}
 
 const areaIcon: Record<string, LucideIcon> = {
   Memory: MemoryStick,
@@ -33,7 +79,12 @@ function UpgradeCard({ u }: { u: Upgrade }) {
           <strong>What to do: </strong>
           {u.how}
         </p>
-        {u.search && <p className="muted small">Part to look for: {u.search}</p>}
+        {u.search && (
+          <div className="upgrade-shop">
+            <span className="muted small">Find prices for “{u.search}”:</span>
+            <ShopButtons search={u.search} />
+          </div>
+        )}
       </div>
     </article>
   );
@@ -117,6 +168,7 @@ export function Upgrades() {
               </ul>
             </section>
           )}
+          {report.parts && report.parts.length > 0 && <PartsCard parts={report.parts} />}
           <p className="muted small">Costs are rough: Free, Low cost (a small part), Moderate, Expensive (a major part or a new PC). Prices change, so compare a few shops before buying.</p>
         </>
       ) : null}

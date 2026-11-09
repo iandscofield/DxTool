@@ -438,6 +438,14 @@ export interface UpgradeReport {
   items: Upgrade[];
   good: string[];
   limited?: string | null;
+  parts?: PartPrice[];
+}
+
+export interface PartPrice {
+  part: string;
+  name: string;
+  search: string;
+  note: string;
 }
 
 export type GameVerdict = "recommended" | "minimum" | "below" | "unknown";

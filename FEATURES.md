@@ -166,7 +166,7 @@ Connect DxTool to Claude so you can ask things like "why does my PC keep crashin
   - read the full hardware inventory;
   - search the Windows event logs;
   - check antivirus status and virus scan results;
-  - get upgrade recommendations;
+  - get upgrade recommendations, with price-search links for this PC's parts;
   - list installed games and check whether a game will run;
   - check for newer graphics, Wi-Fi, Bluetooth and Ethernet drivers;
   - see which DxTool fixes exist and which have already been run.
@@ -214,7 +214,13 @@ A page of upgrade advice for this PC, worked out from its hardware on the PC its
 - **Processor** age, for very old PCs.
 - An **Already good** list, so you can see what doesn't need changing.
 - Laptops get laptop advice (SO-DIMM memory, check for soldered memory, no graphics card upgrades).
-- **Claude** can ask for the same advice.
+- **Price search buttons:** every suggestion that means buying a part has buttons for **PCPartPicker**, **Amazon**, **Newegg** and **eBay**, searching for the right part (for example "500GB SSD").
+- **Prices for this PC's parts:** a list of the main parts (the computer or laptop model, processor, graphics card, memory, drives, motherboard, monitors), each with the same four buttons, to see what it costs today, new or used.
+  - Memory is searched by its exact part number, so the search finds the same kit.
+  - Identical drives are shown once, with how many there are.
+  - Laptop parts that can't be swapped are marked "for reference only".
+- DxTool doesn't read or store prices: the buttons only open the shop's search in the browser (US stores), so nothing goes online until you click.
+- **Claude** can ask for the same advice, including the parts list and its price-search links.
 
 ## Games ✅
 Will a game run on this PC? (Sidebar → Tools → Games.)
@@ -270,8 +276,7 @@ Download from the **Releases** page on GitHub (github.com/iandscofield/DxTool/re
 - If Claude is using DxTool during an update, Claude's connection drops until you restart Claude Desktop.
 
 ## Extra Features 1 🔜 (in progress)
-From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click. Done so far: color themes, upgrade recommendations, game check, newest drivers.
-- **Part prices:** find the current retail price of the parts in this PC.
+From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click. Done so far: color themes, upgrade recommendations, game check, newest drivers, part prices.
 - **Phone diagnostics:** check a connected phone (battery health, storage and so on).
 - **Phone backups:** back up photos and text messages from a phone to the PC.
 

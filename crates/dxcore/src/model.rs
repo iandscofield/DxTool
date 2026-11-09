@@ -532,4 +532,37 @@ pub struct UpgradeReport {
     /// Things that are already fine.
     pub good: Vec<String>,
     pub limited: Option<String>,
+    /// This PC's main parts, with shop search phrases for checking today's prices.
+    pub parts: Vec<PartPrice>,
+}
+
+/// One of this PC's parts, ready for a price search.
+#[derive(Serialize, Clone, Debug, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct PartPrice {
+    /// "Processor", "Graphics card", "Memory", "Drive", "Motherboard", "Monitor" or "Computer".
+    pub part: String,
+    /// What it is, as shown: "Corsair CMH32GX5M2E6000C36 (4 × 16 GB DDR5)".
+    pub name: String,
+    /// Shop search phrase: "Corsair CMH32GX5M2E6000C36".
+    pub search: String,
+    pub note: String,
+}
+
+/// Shop searches for a phrase: (shop name, URL). Opened in the browser; DxTool never reads prices itself.
+pub fn shop_links(search: &str) -> Vec<(&'static str, String)> {
+    let q: String = search
+        .bytes()
+        .map(|b| match b {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' => (b as char).to_string(),
+            b' ' => "+".into(),
+            _ => format!("%{b:02X}"),
+        })
+        .collect();
+    vec![
+        ("PCPartPicker", format!("https://pcpartpicker.com/search/?q={q}")),
+        ("Amazon", format!("https://www.amazon.com/s?k={q}")),
+        ("Newegg", format!("https://www.newegg.com/p/pl?d={q}")),
+        ("eBay", format!("https://www.ebay.com/sch/i.html?_nkw={q}")),
+    ]
 }

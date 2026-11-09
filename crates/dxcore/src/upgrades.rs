@@ -8,7 +8,7 @@
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
-use crate::model::{Inventory, Item, Upgrade, UpgradeReport};
+use crate::model::{Inventory, Item, PartPrice, Upgrade, UpgradeReport};
 
 const GB: f64 = 1024.0 * 1024.0 * 1024.0;
 
@@ -514,7 +514,144 @@ pub fn recommend(inv: &Inventory) -> UpgradeReport {
         limited: c.tpm_unknown.then(|| "The Windows 11 check couldn't read the TPM security chip without administrator rights. Restart DxTool as administrator for a full answer.".to_string()),
         items: c.out,
         good: c.good,
+        parts: parts(inv, laptop),
     }
+}
+
+// ───────────────────────── parts for price searches ─────────────────────────
+
+/// "Micro-Star International Co., Ltd." → "MSI"; "LG (GSM)" → "LG".
+fn short_maker(m: &str) -> String {
+    let m = m.split(" (").next().unwrap_or(m).trim();
+    let l = m.to_lowercase();
+    for (k, v) in [
+        ("micro-star", "MSI"),
+        ("asustek", "ASUS"),
+        ("gigabyte", "Gigabyte"),
+        ("asrock", "ASRock"),
+        ("hewlett", "HP"),
+        ("dell", "Dell"),
+        ("lenovo", "Lenovo"),
+        ("acer", "Acer"),
+        ("samsung", "Samsung"),
+        ("microsoft", "Microsoft"),
+    ] {
+        if l.contains(k) {
+            return v.into();
+        }
+    }
+    m.trim_end_matches(", Inc.").trim_end_matches(" Inc.").trim_end_matches(" Corporation").trim_end_matches(", Ltd.").trim_end_matches(" Co.").to_string()
+}
+
+fn placeholder(s: &str) -> bool {
+    let l = s.to_lowercase();
+    s.trim().is_empty() || ["to be filled", "system product name", "default string", "not applicable", "o.e.m.", "unknown", "generic"].iter().any(|k| l.contains(k))
+}
+
+fn with_maker(maker: &str, model: &str) -> String {
+    let m = short_maker(maker);
+    if m.is_empty() || placeholder(&m) || model.to_lowercase().contains(&m.to_lowercase()) { model.to_string() } else { format!("{m} {model}") }
+}
+
+/// This PC's main parts with shop search phrases (offline; the searches open on click).
+pub fn parts(inv: &Inventory, laptop: bool) -> Vec<PartPrice> {
+    let mut out = Vec::new();
+    let mut add = |part: &str, name: String, search: String, note: &str| {
+        if !out.iter().any(|p: &PartPrice| p.part == part && p.search == search) {
+            out.push(PartPrice { part: part.into(), name, search, note: note.into() });
+        }
+    };
+
+    if let Some(c) = item(inv, "system", "computer") {
+        let model = text(c, "Model").unwrap_or("");
+        if !placeholder(model) && (laptop || !model.to_lowercase().contains("desktop") || model.split_whitespace().count() > 1) {
+            let name = with_maker(text(c, "Manufacturer").unwrap_or(""), model);
+            add("Computer", name.clone(), name, if laptop { "The whole laptop. Used prices (eBay) show what it's worth today." } else { "The whole PC, if it was bought ready-made. Used prices (eBay) show what it's worth today." });
+        }
+    }
+    for cpu in items(inv, "cpu") {
+        let n = clean_cpu(text(cpu, "Model").unwrap_or(&cpu.name));
+        if !n.is_empty() {
+            // "13th Gen Intel Core i7-13700F" → shops list it as "Intel Core i7-13700F".
+            let search = match n.split_once(" Gen ") {
+                Some((g, rest)) if g.ends_with(|c: char| c.is_ascii_alphabetic()) && g.chars().next().is_some_and(|c| c.is_ascii_digit()) => rest.to_string(),
+                _ => n.clone(),
+            };
+            add("Processor", n, search, if laptop { "Built into the laptop: shown for reference only." } else { "" });
+        }
+    }
+    if !laptop {
+        for g in items(inv, "graphics") {
+            let m = text(g, "Model").unwrap_or(&g.name);
+            let l = m.to_lowercase();
+            let discrete = ["geforce", "radeon rx", "radeon pro", "quadro", "arc a", "arc b", "rtx ", "gtx "].iter().any(|k| l.contains(k));
+            if discrete && !l.contains("virtual") {
+                let s = m.trim_start_matches("NVIDIA ").trim_start_matches("AMD ").to_string();
+                let vram = num(g, "Video memory").filter(|v| *v > 0.0).map(|v| format!(" {}", gb(v))).unwrap_or_default();
+                add("Graphics card", format!("{m}{vram}"), s, "");
+            }
+        }
+    }
+    // Memory: group sticks by part number (a kit part number covers the whole kit).
+    let sticks: Vec<&Item> = items(inv, "memory").iter().filter(|m| m.id.starts_with("dimm")).collect();
+    let mut groups: Vec<(String, String, u32, f64, String)> = Vec::new(); // (maker, part no, count, size, type)
+    for s in &sticks {
+        let pn = text(s, "Part number").unwrap_or("").trim().to_string();
+        let maker = text(s, "Manufacturer").unwrap_or("").to_string();
+        let size = num(s, "Capacity").unwrap_or(0.0);
+        let kind = text(s, "Type").unwrap_or("").to_string();
+        match groups.iter_mut().find(|g| g.1 == pn && g.3 == size) {
+            Some(g) => g.2 += 1,
+            None => groups.push((maker, pn, 1, size, kind)),
+        }
+    }
+    let form = if laptop { "SO-DIMM laptop memory" } else { "desktop memory" };
+    for (maker, pn, n, size, kind) in groups {
+        let desc = format!("{n} × {} {kind}", gb(size)).trim().to_string();
+        if !pn.is_empty() && !placeholder(&pn) && pn.len() >= 6 {
+            let search = with_maker(&maker, &pn);
+            add("Memory", format!("{search} ({desc})"), search, "Searched by the exact part number, so it finds the same kit. A kit may hold 2 or 4 sticks.");
+        } else if size > 0.0 {
+            add("Memory", desc, format!("{} {kind} {form}", gb(size).replace(' ', "")), "");
+        }
+    }
+    let mut drives: Vec<(String, String, u32)> = Vec::new(); // (model, capacity, count)
+    for d in items(inv, "storage") {
+        let model = text(d, "Model").unwrap_or(&d.name).trim().to_string();
+        let iface = text(d, "Interface").unwrap_or("").to_lowercase();
+        if placeholder(&model) || iface.contains("usb") || iface.contains("virtual") || model.to_lowercase().contains("virtual") {
+            continue;
+        }
+        match drives.iter_mut().find(|x| x.0 == model) {
+            Some(x) => x.2 += 1,
+            None => drives.push((model, text(d, "Capacity").unwrap_or("").to_string(), 1)),
+        }
+    }
+    for (model, cap, n) in drives {
+        let count = if n > 1 { format!("{n} × ") } else { String::new() };
+        let cap = if cap.is_empty() { String::new() } else { format!(" ({cap})") };
+        add("Drive", format!("{count}{model}{cap}"), model, "");
+    }
+    if !laptop {
+        if let Some(b) = item(inv, "system", "motherboard") {
+            let model = text(b, "Model").unwrap_or("");
+            let model = model.split(" (").next().unwrap_or(model).trim();
+            if !placeholder(model) {
+                let n = with_maker(text(b, "Manufacturer").unwrap_or(""), model);
+                add("Motherboard", n.clone(), n, "");
+            }
+        }
+    }
+    for m in items(inv, "displays") {
+        let model = text(m, "Model").unwrap_or(&m.name).trim();
+        let conn = text(m, "Connection").unwrap_or("").to_lowercase();
+        if placeholder(model) || conn.contains("internal") || model.to_lowercase().contains("pnp") {
+            continue;
+        }
+        let n = with_maker(text(m, "Manufacturer").unwrap_or(""), model);
+        add("Monitor", n.clone(), format!("{n} monitor"), "");
+    }
+    out
 }
 
 // ───────────────────────── inventory cache ─────────────────────────
@@ -546,6 +683,16 @@ pub fn for_this_pc() -> UpgradeReport {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn makers() {
+        assert_eq!(short_maker("Micro-Star International Co., Ltd."), "MSI");
+        assert_eq!(short_maker("LG (GSM)"), "LG");
+        assert_eq!(short_maker("Samsung (SAM)"), "Samsung");
+        assert_eq!(with_maker("Corsair", "CMH32GX5M2E6000C36"), "Corsair CMH32GX5M2E6000C36");
+        assert_eq!(with_maker("Samsung", "Samsung SSD 990 PRO 4TB"), "Samsung SSD 990 PRO 4TB");
+        assert!(placeholder("To Be Filled By O.E.M."));
+    }
 
     #[test]
     fn kit_speeds() {

@@ -23,4 +23,9 @@ fn main() {
     if let Some(l) = &report.limited {
         println!("\nLIMITED: {l}");
     }
+    println!("
+PARTS:");
+    for p in &report.parts {
+        println!("  - {}: {}  [search: {}] {}", p.part, p.name, p.search, p.note);
+    }
 }
