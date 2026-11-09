@@ -1,5 +1,6 @@
 import {
   Bug,
+  CircuitBoard,
   Cpu,
   FileText,
   Gamepad2,
@@ -33,6 +34,7 @@ const main: NavItem[] = [
 const tools: NavItem[] = [
   { id: "upgrades", label: "Upgrades", icon: Rocket },
   { id: "games", label: "Games", icon: Gamepad2 },
+  { id: "drivers", label: "Drivers", icon: CircuitBoard },
   { id: "history", label: "History", icon: History },
   { id: "reports", label: "Reports", icon: FileText },
   { id: "fixes", label: "Fixes", icon: Wrench },

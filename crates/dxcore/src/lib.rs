@@ -24,6 +24,8 @@ pub mod history;
 #[cfg(windows)]
 pub mod inventory;
 #[cfg(windows)]
+pub mod latest_drivers;
+#[cfg(windows)]
 pub mod machine;
 #[cfg(windows)]
 pub mod mcp;

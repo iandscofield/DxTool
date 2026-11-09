@@ -314,6 +314,20 @@ async fn upgrade_advice(refresh: bool) -> Result<dxcore::model::UpgradeReport, S
     .await
 }
 
+// ───────────────────────── Newest drivers ─────────────────────────
+
+/// The last newest-drivers check, if there was one (offline).
+#[tauri::command]
+async fn drivers_last() -> Result<Option<dxcore::latest_drivers::DriverCheck>, String> {
+    blocking(dxcore::latest_drivers::last).await
+}
+
+/// Asks NVIDIA and Intel for the newest drivers for this PC's devices (online).
+#[tauri::command]
+async fn drivers_check() -> Result<dxcore::latest_drivers::DriverCheck, String> {
+    blocking(dxcore::latest_drivers::check).await
+}
+
 // ───────────────────────── Game check ─────────────────────────
 
 /// Games installed through Steam and Epic (offline).
@@ -429,6 +443,8 @@ pub fn run() {
             claude_setup,
             mcp_try_tool,
             upgrade_advice,
+            drivers_last,
+            drivers_check,
             games_installed,
             game_check,
             game_search,

@@ -168,6 +168,7 @@ Connect DxTool to Claude so you can ask things like "why does my PC keep crashin
   - check antivirus status and virus scan results;
   - get upgrade recommendations;
   - list installed games and check whether a game will run;
+  - check for newer graphics, Wi-Fi, Bluetooth and Ethernet drivers;
   - see which DxTool fixes exist and which have already been run.
 - **Claude can't run repairs or delete files.** It recommends DxTool's fixes by name, and you run them in DxTool, which makes a restore point first.
 - Needs Claude Desktop or Claude Code and a Claude account. DxTool itself sends nothing anywhere: Claude asks, and DxTool answers on your PC.
@@ -237,6 +238,19 @@ Will a game run on this PC? (Sidebar → Tools → Games.)
 - Epic games are matched to their Steam page by name. Games not sold on Steam (such as Fortnite) can't be checked, and DxTool says so.
 - **Claude** can list installed games and check any game too.
 
+## Drivers ✅
+Are the most important drivers the newest? (Sidebar → Tools → Drivers.) Goes online only when you click **Check for newer drivers**.
+- **NVIDIA graphics cards:** DxTool asks NVIDIA's driver service for the newest Game Ready driver for the exact card (desktop or laptop version) and compares it with the one installed, in NVIDIA's own numbering (for example 621.01 vs 621.14).
+  - For older cards NVIDIA no longer updates, it shows the card's final driver and says so.
+- **Intel graphics, Wi-Fi, Bluetooth and Ethernet:** matched by exact device ID against the public driver list Intel's own Driver & Support Assistant uses, for this version of Windows.
+- **AMD graphics cards:** AMD has no way to look this up, so DxTool shows the installed driver's version and age, with a button to AMD's driver page.
+- Each device shows **Update available**, **Up to date**, **Newer than the maker's** (for example a Studio or PC-maker driver: that's fine) or **Check yourself**, with both versions and dates.
+- **Download** opens the maker's own download link in the browser (with its size for Intel). DxTool doesn't install these itself: you run the downloaded file. The page explains how, and how to roll back.
+- Intel graphics drivers come with a reminder that the laptop or PC maker's own driver may be the safer choice.
+- **Other drivers** (chipset, audio, printers and so on): a button opens DxTool's **Install driver updates** repair, which uses Windows Update.
+- The last check is saved and shown again next time, offline.
+- **Claude** can check for newer drivers too.
+
 ## Getting DxTool ✅
 Download from the **Releases** page on GitHub (github.com/iandscofield/DxTool/releases). Two choices, same program:
 - **DxTool.exe (portable):** no installing. Put it in any folder or on a USB stick and double-click it. Its saved scans, reports and settings live in a `DxTool-Data` folder right next to it, so the whole thing can be carried from PC to PC.
@@ -256,8 +270,7 @@ Download from the **Releases** page on GitHub (github.com/iandscofield/DxTool/re
 - If Claude is using DxTool during an update, Claude's connection drops until you restart Claude Desktop.
 
 ## Extra Features 1 🔜 (in progress)
-From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click. Done so far: color themes, upgrade recommendations, game check.
-- **Newest graphics drivers straight from NVIDIA, AMD and Intel** (Windows Update is already used).
+From the "Extra Features 1" section of the requirements document. Anything that needs the internet is optional and only goes online when you click. Done so far: color themes, upgrade recommendations, game check, newest drivers.
 - **Part prices:** find the current retail price of the parts in this PC.
 - **Phone diagnostics:** check a connected phone (battery health, storage and so on).
 - **Phone backups:** back up photos and text messages from a phone to the PC.

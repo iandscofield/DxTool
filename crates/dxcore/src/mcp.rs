@@ -15,7 +15,7 @@ const PROTOCOLS: &[&str] = &["2025-06-18", "2025-03-26", "2024-11-05"];
 const INSTRUCTIONS: &str = "DxTool is a Windows diagnostic tool running on the user's PC. \
 Start with get_pc_overview. Run run_health_scan (fast takes seconds, full under a minute) to check drives, crashes, \
 Windows Update, drivers, security and more; findings come with plain-English advice. Use get_hardware_inventory for \
-detailed specs, get_upgrade_recommendations for what to upgrade or whether Windows 11 is possible, check_game to see whether a game will run, and query_event_log to dig into crashes and errors. DxTool's repairs (SFC, DISM, chkdsk, driver updates, \
+detailed specs, get_upgrade_recommendations for what to upgrade or whether Windows 11 is possible, check_game to see whether a game will run, check_newest_drivers for graphics and network driver updates, and query_event_log to dig into crashes and errors. DxTool's repairs (SFC, DISM, chkdsk, driver updates, \
 etc.) and virus removal are run by the user inside the DxTool app, which creates a restore point first: recommend them \
 by name rather than giving manual commands when a DxTool fix exists. Explain things simply; the user may not be technical.";
 
@@ -69,6 +69,11 @@ fn tools() -> Value {
         {
             "name": "get_upgrade_recommendations",
             "description": "DxTool's upgrade advice for this PC, worked out from its hardware: memory (amount, empty slots, XMP/EXPO switched off), moving Windows to an SSD, failing or full drives, Windows 11 readiness, worn laptop batteries, graphics and processor age. Each item has a priority, rough cost, why and how. Also lists what is already fine.",
+            "inputSchema": { "type": "object", "properties": {} }
+        },
+        {
+            "name": "check_newest_drivers",
+            "description": "Compares this PC's graphics, Wi-Fi, Bluetooth and Ethernet drivers with the newest versions the makers publish: NVIDIA graphics (exact, from NVIDIA's driver service), Intel graphics/Wi-Fi/Bluetooth/Ethernet (from Intel's Driver & Support Assistant catalog), AMD graphics (installed version only, with AMD's page). Gives download links. Needs the internet. Other drivers come from Windows Update.",
             "inputSchema": { "type": "object", "properties": {} }
         },
         {
@@ -216,6 +221,7 @@ pub fn call_tool(name: &str, a: &Value) -> Result<String, String> {
         }
         "get_saved_scan" => load_scan(arg_str(a, "machine_id").ok_or("machine_id is required")?, arg_str(a, "scan_id").ok_or("scan_id is required")?, arg_bool(a, "include_details")),
         "list_machines" => Ok(machines_text()),
+        "check_newest_drivers" => Ok(drivers_text(&crate::latest_drivers::check())),
         "list_installed_games" => Ok(games_text()),
         "check_game" => {
             let g = arg_str(a, "game").ok_or("Missing 'game'.")?;
@@ -686,5 +692,32 @@ fn game_check_text(c: &crate::games::GameCheck) -> String {
         }
     }
     out.push_str("\nProcessor and graphics comparisons use rough benchmark scores; memory and storage are exact.\n");
+    out
+}
+
+fn drivers_text(c: &crate::latest_drivers::DriverCheck) -> String {
+    let mut out = String::new();
+    if c.nothing_to_check {
+        out.push_str("This PC has no NVIDIA, Intel or AMD graphics, Wi-Fi, Bluetooth or Ethernet devices that DxTool can look up. Windows Update covers the rest.\n");
+    }
+    for d in &c.items {
+        out.push_str(&format!("\n{} ({} {}) [{}]\n  {}\n  Installed: {} ({})\n", d.device, d.vendor, d.kind, d.status, d.summary, d.installed_version, d.installed_date));
+        if !d.latest_version.is_empty() {
+            out.push_str(&format!("  Newest: {} {} ({})\n", d.latest_name, d.latest_version, d.latest_date));
+        }
+        if !d.download_url.is_empty() {
+            out.push_str(&format!("  Download: {}\n", d.download_url));
+        }
+        if !d.details_url.is_empty() {
+            out.push_str(&format!("  Page: {}\n", d.details_url));
+        }
+        if !d.note.is_empty() {
+            out.push_str(&format!("  Note: {}\n", d.note));
+        }
+    }
+    for p in &c.problems {
+        out.push_str(&format!("\nProblem: {p}\n"));
+    }
+    out.push_str("\nOther drivers (chipset, audio, printers and so on) come from Windows Update: DxTool's 'Install driver updates' repair checks those.\n");
     out
 }

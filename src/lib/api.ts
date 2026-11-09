@@ -1,5 +1,5 @@
 import { Channel, invoke } from "@tauri-apps/api/core";
-import type { GameCheck, InstalledGame, SearchHit, UpgradeReport, UpdateInfo, AvEngine, AvEvent, AvKind, AvStatus, ClaudeStatus, QuarantineItem, Threat, VirusScan, AppInfo, AppSettings, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
+import type { DriverCheck, GameCheck, InstalledGame, SearchHit, UpgradeReport, UpdateInfo, AvEngine, AvEvent, AvKind, AvStatus, ClaudeStatus, QuarantineItem, Threat, VirusScan, AppInfo, AppSettings, CheckInfo, DriverUpdate, FixEvent, FixInfo, FixRequest, FixRun, Inventory, MachineInfo, MachineRecord, ScanEvent, ScanKind, ScanReport } from "./types";
 import { defaultBranding } from "./types";
 
 /** True inside the DxTool window; false when the UI is opened in a normal browser during development. */
@@ -134,6 +134,87 @@ export const api = {
           exe: "C:\\Tools\\DxTool\\DxTool.exe",
           claudeCodeCommand: 'claude mcp add --scope user dxtool -- "C:\\Tools\\DxTool\\DxTool.exe" --mcp',
         }),
+  driversLast: (): Promise<DriverCheck | null> => (inTauri ? invoke<DriverCheck | null>("drivers_last") : Promise.resolve(null)),
+  driversCheck: (): Promise<DriverCheck> =>
+    inTauri
+      ? invoke<DriverCheck>("drivers_check")
+      : new Promise((r) =>
+          setTimeout(
+            () =>
+              r({
+                checkedAt: new Date().toISOString(),
+                problems: [],
+                nothingToCheck: false,
+                items: [
+                  {
+                    device: "NVIDIA GeForce RTX 4070 Ti",
+                    vendor: "NVIDIA",
+                    kind: "Graphics",
+                    installedVersion: "621.01",
+                    installedDate: "2026-10-19",
+                    latestVersion: "621.14",
+                    latestDate: "2026-11-04",
+                    latestName: "GeForce Game Ready Driver",
+                    status: "update",
+                    summary: "NVIDIA driver 621.14 is out (2026-11-04). This PC has 621.01.",
+                    downloadUrl: "https://us.download.nvidia.com/Windows/621.14/621.14-desktop-win10-win11-64bit-international-dch-whql.exe",
+                    downloadSize: 0,
+                    detailsUrl: "https://www.nvidia.com/en-us/drivers/details/283968/",
+                    note: "This is the Game Ready driver. If you use NVIDIA's Studio drivers instead, get those from NVIDIA's site or the NVIDIA app.",
+                  },
+                  {
+                    device: "Intel(R) Wi-Fi 6E AX211 160MHz",
+                    vendor: "Intel",
+                    kind: "Wi-Fi",
+                    installedVersion: "23.30.0.6",
+                    installedDate: "2024-01-21",
+                    latestVersion: "24.70.0.3",
+                    latestDate: "2026-09-08",
+                    latestName: "Intel Wireless Wi-Fi Drivers for Windows 10 and Windows 11",
+                    status: "update",
+                    summary: "Intel driver 24.70.0.3 is out (2026-09-08). This PC has 23.30.0.6.",
+                    downloadUrl: "https://downloadmirror.intel.com/926939/WiFi-24.70.0-Driver64-Win10-Win11.exe",
+                    downloadSize: 54400872,
+                    detailsUrl: "https://www.intel.com/",
+                    note: "",
+                  },
+                  {
+                    device: "AMD Radeon RX 7800 XT",
+                    vendor: "AMD",
+                    kind: "Graphics",
+                    installedVersion: "32.0.21025.10016",
+                    installedDate: "2026-02-10",
+                    latestVersion: "",
+                    latestDate: "",
+                    latestName: "",
+                    status: "unknown",
+                    summary: "The installed driver is from 2026-02-10 (about 9 months old). AMD doesn't offer a way to look up the newest version, so check AMD's driver page or AMD Software: Adrenalin Edition.",
+                    downloadUrl: "",
+                    downloadSize: 0,
+                    detailsUrl: "https://www.amd.com/en/support/download/drivers.html",
+                    note: 'On AMD\'s page, use "Auto-Detect and Install" or pick the card by name.',
+                  },
+                  {
+                    device: "Intel(R) Ethernet Controller I226-V",
+                    vendor: "Intel",
+                    kind: "Ethernet",
+                    installedVersion: "2.1.5.7",
+                    installedDate: "2026-03-01",
+                    latestVersion: "2.1.5.7",
+                    latestDate: "2026-07-10",
+                    latestName: "Intel Network Adapter Driver for Microsoft Windows 11",
+                    status: "current",
+                    summary: "Up to date: 2.1.5.7 is Intel's newest driver for this device.",
+                    downloadUrl: "",
+                    downloadSize: 0,
+                    detailsUrl: "",
+                    note: "",
+                  },
+                ],
+              }),
+            700,
+          ),
+        ),
   gamesInstalled: (): Promise<InstalledGame[]> =>
     inTauri
       ? invoke<InstalledGame[]>("games_installed")

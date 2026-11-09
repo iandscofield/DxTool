@@ -4,6 +4,30 @@ Newest first. Written in plain English: what changed and why it matters.
 
 ---
 
+## Version 0.9.0 · Extra Features 1: Newest drivers · 2026-11-08
+
+### New
+- **Drivers page** (Sidebar → Tools → Drivers). Click **Check for newer drivers** to compare the most important drivers with the newest from the makers:
+  - **NVIDIA** graphics cards: the exact newest driver for the card, straight from NVIDIA.
+  - **Intel** graphics, Wi-Fi, Bluetooth and Ethernet: matched by device ID against Intel's own driver list.
+  - **AMD** graphics cards: the installed driver's version and age, with a button to AMD's driver page (AMD offers no way to look it up).
+- **Download** buttons open the maker's own download in the browser. You run the file yourself, and the page explains how.
+- **Other drivers** button: opens the existing Windows Update driver repair for everything else.
+- The last check is saved, so it shows again offline.
+- **Claude** can check for newer drivers.
+
+### Tested
+- **This PC:**
+  - NVIDIA RTX 4070 Ti: found that 621.14 (4 November) is out and this PC has 621.01.
+  - Intel Wi-Fi 6E AX211: 24.70 is out, this PC has 23.30 (from January 2024).
+  - Intel Bluetooth: 24.70 is out, this PC has 24.40.
+  - The download links work: NVIDIA's is about 1 GB, Intel's Wi-Fi one 54 MB.
+- **NVIDIA lookups** for an old GTX 680 (gives its final driver, 475.14, from 2024), a laptop RTX 4070 (gives the laptop download) and a made-up card (handled as "no driver listed").
+- **Automatic tests** for NVIDIA's version numbering, version comparison and Intel device matching, including skipping old "Historical" packages and packages for the other Windows version.
+- **The Drivers page** in the preview browser, and Claude's drivers tool on the real program.
+
+---
+
 ## Version 0.8.0 · Extra Features 1: Game check · 2026-11-08
 
 ### New

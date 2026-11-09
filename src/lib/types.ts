@@ -55,6 +55,7 @@ export type Mode = "simple" | "advanced";
 export type ThemePref = "system" | "dark" | "light";
 export type Accent = "blue" | "purple" | "red" | "green" | "orange";
 export type Page =
+  | "drivers"
   | "games"
   | "upgrades"
   | "overview"
@@ -478,4 +479,30 @@ export interface SearchHit {
   appId: number;
   name: string;
   image: string;
+}
+
+export type DriverState = "update" | "current" | "newer" | "unknown";
+
+export interface DriverStatus {
+  device: string;
+  vendor: "NVIDIA" | "Intel" | "AMD";
+  kind: string;
+  installedVersion: string;
+  installedDate: string;
+  latestVersion: string;
+  latestDate: string;
+  latestName: string;
+  status: DriverState;
+  summary: string;
+  downloadUrl: string;
+  downloadSize: number;
+  detailsUrl: string;
+  note: string;
+}
+
+export interface DriverCheck {
+  checkedAt: string;
+  items: DriverStatus[];
+  problems: string[];
+  nothingToCheck: boolean;
 }

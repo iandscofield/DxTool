@@ -867,3 +867,8 @@ button.scan-card:hover { border-color: var(--border-strong); }
 .badge.verdict.v-below { background: rgba(244, 63, 94, 0.15); color: var(--error); }
 .simple-table.game-table td { white-space: normal; min-width: 140px; }
 .simple-table.game-table tbody th { color: var(--text); font-size: 13px; border-bottom: 1px dashed var(--border); padding-top: 8px; vertical-align: top; }
+
+/* Drivers */
+.driver-versions { width: auto; margin: 8px 0 10px; }
+.driver-versions th { border-bottom: none; padding: 3px 14px 3px 0; vertical-align: top; }
+.driver-versions td { border-bottom: none; padding: 3px 0; white-space: normal; }
